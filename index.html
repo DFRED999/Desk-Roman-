@@ -486,6 +486,19 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
 .more-nav a { display: flex; gap: 10px; align-items: center; padding: 14px; border-radius: 12px; background: var(--surface-2); color: var(--text); text-decoration: none; font-weight: 600; }
 @media (max-width: 900px) { .ent-cols { grid-template-columns: 1fr; } .ent-kpis { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 760px) { .ent-kpis { grid-template-columns: 1fr 1fr; } .ent-grid { grid-template-columns: 1fr; } }
+.sub-cbtn { border: 1px solid var(--border); background: var(--surface); border-radius: 99px; padding: 1px 7px; font-size: 12px; cursor: pointer; flex-shrink: 0; color: var(--muted); }
+.sub-cbtn.has { color: var(--c-tasks); border-color: #f6c79c; font-weight: 700; }
+.sub-cbtn.on { background: var(--c-tasks); color: #fff; border-color: transparent; }
+.j-subnotes { padding: 10px 14px 12px; background: #fffaf5; border-top: 1px dashed #f2b27a; display: flex; flex-direction: column; gap: 8px; }
+.sn-h { font-size: 13px; color: var(--muted); }
+.sn-add { display: flex; gap: 6px; flex-wrap: wrap; }
+.sn-add input#subCmt { flex: 1; min-width: 180px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+.sn-add input[type=datetime-local] { padding: 6px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); font-size: 12.5px; }
+.sn-item { display: flex; gap: 8px; font-size: 13.5px; padding: 6px 8px; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); }
+.sn-item.sys { background: transparent; border-style: dashed; color: var(--muted); font-size: 12.5px; }
+.sn-item .sub, .j-subnotes .sub { color: var(--muted); font-size: 12px; }
+.log-sub { display: inline-block; font-size: 12px; color: #9a3412; background: var(--c-tasks-soft); border-radius: 6px; padding: 1px 7px; margin-bottom: 3px; cursor: pointer; }
+@media (max-width: 760px) { .sn-add input#subCmt { font-size: 16px; } }
 
 </style>
 </head>
@@ -897,7 +910,7 @@ window.DEMO_SEED = function () {
   const LOG_TYPES = { note: { l: 'הערה', i: '📝' }, update: { l: 'עדכון', i: '🔄' }, sent: { l: 'נשלח חומר', i: '📤' }, received: { l: 'התקבל חומר', i: '📥' },
     call: { l: 'שיחה', i: '📞' }, meeting: { l: 'פגישה', i: '🤝' }, system: { l: 'מערכת', i: '⚙️' } };
   const sid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-  const logEntry = (text, type = 'system', at) => ({ by: DB.user.name, at: at || new Date().toISOString(), text, type });
+  const logEntry = (text, type = 'system', at, subId) => { const e = { by: DB.user.name, at: at || new Date().toISOString(), text, type }; if (subId) e.subId = subId; return e; };
   const subStats = (t) => { const l = t.subtasks || []; return { total: l.length, done: l.filter((x) => x.done).length }; };
 
   /* ---------------- סטטוסים ---------------- */
@@ -1462,20 +1475,32 @@ window.DEMO_SEED = function () {
         ${st.total ? `<div class="j-tr j-th"><div>משימה</div><div>עדיפות</div><div>אחראי/ת</div><div>יעד</div><div>סטטוס</div><div></div></div>` : ''}
         ${list.map((x, i) => { const d = x.dueDate ? daysLeft(x.dueDate) : null; const ss = subStatus(x); const late = ss !== 'done' && d != null && d < 0;
           return `<div class="j-tr ${ss === 'done' ? 'done' : ''}">
-          <div class="j-title"><span class="j-key">${keyOf(t)}-${i + 1}</span><span class="j-t" contenteditable="true" data-sedit="${x.id}" data-tid="${t.id}">${esc(x.title)}</span></div>
+          <div class="j-title"><span class="j-key">${keyOf(t)}-${i + 1}</span>${(() => { const n = (t.comments || []).filter((c) => c.subId === x.id && c.type !== 'system').length;
+            return `<button class="sub-cbtn ${S.openSub === x.id ? 'on' : ''} ${n ? 'has' : ''}" data-act="sub-notes" data-sid="${x.id}" title="הערות לתת‑המשימה">💬${n ? ' ' + n : ''}</button>`; })()}<span class="j-t" contenteditable="true" data-sedit="${x.id}" data-tid="${t.id}">${esc(x.title)}</span></div>
           <div><select data-sf="priority" data-sid="${x.id}" data-tid="${t.id}" class="j-sel">${Object.entries(PRIORITY).map(([k, v]) => `<option value="${k}" ${(x.priority || 'normal') === k ? 'selected' : ''}>${v.l}</option>`).join('')}</select></div>
           <div class="j-ass">${avatar(x.assignee || t.assignee)}<input list="userList" value="${esc(x.assignee || '')}" placeholder="${esc(t.assignee || '—')}" data-sf="assignee" data-sid="${x.id}" data-tid="${t.id}" class="j-in"></div>
           <div><input type="date" value="${esc(x.dueDate || '')}" data-sf="dueDate" data-sid="${x.id}" data-tid="${t.id}" class="j-in ${late ? 'late' : ''}"></div>
           <div><select data-sf="status" data-sid="${x.id}" data-tid="${t.id}" class="j-sel j-st ${SSTATUS[ss].c}">${Object.entries(SSTATUS).map(([k, v]) => `<option value="${k}" ${ss === k ? 'selected' : ''}>${v.l}</option>`).join('')}</select></div>
-          <div><button class="btn sm ghost" data-act="sub-del" data-id="${t.id}" data-sid="${x.id}" title="מחק">✕</button></div></div>`; }).join('')}
+          <div><button class="btn sm ghost" data-act="sub-del" data-id="${t.id}" data-sid="${x.id}" title="מחק">✕</button></div></div>
+          ${S.openSub === x.id ? subNotesHTML(t, x, i) : ''}`; }).join('')}
         <div class="j-tr j-add"><input id="subTitle" placeholder="+ תת‑משימה חדשה… (Enter)"><input id="subDue" type="date" title="יעד"><button class="btn sm orange" data-act="sub-add" data-id="${t.id}">הוסף</button></div>
       </div></div>`;
   }
-  async function updateSubs(tid, fn, logText) {
+  function subNotesHTML(t, x, i) {
+    const list = (t.comments || []).filter((c) => c.subId === x.id).sort((a, b) => (b.at || '').localeCompare(a.at || ''));
+    return `<div class="j-subnotes">
+      <div class="sn-h">💬 יומן של ${keyOf(t)}-${i + 1}: <b>${esc(x.title)}</b></div>
+      <div class="sn-add"><select id="subLogType" class="j-sel" style="width:auto;border-color:var(--border);background:var(--surface)">${Object.entries(LOG_TYPES).filter(([k]) => k !== 'system').map(([k, v]) => `<option value="${k}">${v.i} ${v.l}</option>`).join('')}</select>
+        <input id="subCmt" placeholder="הערה / עדכון לתת‑משימה הזו… (Enter)"><input id="subCmtAt" type="datetime-local" value="${localNow()}" data-default="${localNow()}">
+        <button class="btn sm orange" data-act="sub-comment" data-id="${t.id}" data-sid="${x.id}">שמירה</button></div>
+      ${list.map((c) => { const T = LOG_TYPES[c.type || 'note'] || LOG_TYPES.note; return `<div class="sn-item ${c.type === 'system' ? 'sys' : ''}"><span>${T.i}</span><div style="flex:1;min-width:0"><b>${esc(c.by || '')}</b> <span class="sub">${fmtDT(c.at)}${c.type !== 'system' ? ' · ' + T.l : ''}</span><div style="white-space:pre-wrap">${esc(c.text)}</div></div></div>`; }).join('') || '<div class="sub" style="padding:4px 0">עדיין אין הערות לתת‑משימה זו</div>'}
+    </div>`;
+  }
+  async function updateSubs(tid, fn, logText, subId) {
     const t = byId('tasks', tid); const subs = (t.subtasks || []).map((x) => ({ ...x }));
     fn(subs);
     const patch = { subtasks: subs };
-    if (logText) patch.comments = [...(t.comments || []), logEntry(logText)];
+    if (logText) patch.comments = [...(t.comments || []), logEntry(logText, 'system', undefined, subId)];
     await DB.update('tasks', tid, patch);
   }
   async function setTaskField(tid, field, value) {
@@ -1508,11 +1533,14 @@ window.DEMO_SEED = function () {
           <div class="log-add">
             <div class="chips" id="logType">${Object.entries(LOG_TYPES).filter(([k]) => k !== 'system').map(([k, v], i) => `<span class="chip ${i === 0 ? 'on' : ''}" data-act="logtype" data-v="${k}">${v.i} ${v.l}</span>`).join('')}</div>
             <textarea id="cmt" placeholder="הוסף הערה או עדכון… למשל: שלחתי לקבלן את התוכניות"></textarea>
+            ${(t.subtasks || []).length ? `<div style="display:flex;gap:8px;align-items:center"><label style="font-size:12.5px;color:var(--muted)">שייך ל:</label><select id="cmtSub" class="j-sel" style="width:auto;flex:1;border-color:var(--border);background:var(--surface)">
+              <option value="">המשימה הראשית</option>${(t.subtasks || []).map((x, i) => `<option value="${x.id}">↳ ${keyOf(t)}-${i + 1} ${esc(x.title)}</option>`).join('')}</select></div>` : ''}
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><label style="font-size:12.5px;color:var(--muted)">מתי:</label>
               <input id="cmtAt" type="datetime-local" value="${localNow()}" data-default="${localNow()}"><span style="flex:1"></span><button class="btn orange" data-act="comment" data-id="${id}">שמירה</button></div>
           </div>
           <div class="log">${shown.map((c) => { const T = LOG_TYPES[c.type || 'note'] || LOG_TYPES.note;
             return `<div class="log-item ${c.type === 'system' ? 'sys' : ''}">${c.type === 'system' ? `<div class="log-ic">${T.i}</div>` : avatar(c.by)}<div style="flex:1;min-width:0">
+              ${c.subId ? (() => { const si = (t.subtasks || []).findIndex((y) => y.id === c.subId); const sx = (t.subtasks || [])[si]; return `<div class="log-sub" data-act="sub-notes" data-sid="${c.subId}">↳ ${sx ? `${keyOf(t)}-${si + 1} ${esc(sx.title)}` : 'תת‑משימה שנמחקה'}</div>`; })() : ''}
               <div class="log-h"><b>${esc(c.by || '')}</b>${c.type !== 'system' ? ` <span class="pill gray" style="font-size:11.5px">${T.i} ${esc(T.l)}</span>` : ''}<span>${fmtDT(c.at)}</span></div><div style="white-space:pre-wrap">${esc(c.text)}</div></div></div>`; }).join('') || '<div class="empty" style="padding:10px">אין רישומים</div>'}</div>
         </div>
       </div>
@@ -1716,7 +1744,7 @@ window.DEMO_SEED = function () {
     if (type === 'tag') sub = 'כל המשימות שמסומנות בתגית הזו';
     // יומן משולב
     const feed = [];
-    r.tasks.forEach((t) => (t.comments || []).filter((c) => c.type !== 'system').forEach((c) => feed.push({ at: c.at, by: c.by, text: c.text, type: c.type, src: `${keyOf(t)} ${t.title}`, kind: 'task', id: t.id })));
+    r.tasks.forEach((t) => (t.comments || []).filter((c) => c.type !== 'system').forEach((c) => feed.push({ at: c.at, by: c.by, text: c.text, type: c.type, src: `${keyOf(t)} ${t.title}` + (c.subId ? (() => { const si = (t.subtasks || []).findIndex((y) => y.id === c.subId); return si >= 0 ? ` ↳ ${t.subtasks[si].title}` : ''; })() : ''), kind: 'task', id: t.id })));
     ordersAll.forEach((o) => (o.history || []).forEach((h) => feed.push({ at: h.date, by: h.by || '', text: ({ create: 'נוצרה', increase: 'הגדלה ' + money(h.amount), decrease: 'הפחתה ' + money(h.amount), extend: 'הארכה עד ' + dfmt(h.newEnd), version: 'גרסה ' + (h.version || ''), link: 'קישור להמשך', note: '' })[h.type] + (h.note ? ' — ' + h.note : ''), type: 'order', src: 'הזמנה ' + o.orderNumber, kind: 'order', id: o.id })));
     feed.sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
     const sec = (title, n, html, act = '') => `<div class="ent-sec"><div class="ent-sec-h"><h4>${title}</h4><span class="pill gray">${n}</span><span style="flex:1"></span>${act}</div>${html}</div>`;
@@ -1893,10 +1921,10 @@ window.DEMO_SEED = function () {
     if (data.tasks && data.tasks.length) {
       const sub = [['משימה ראשית', 'תת‑משימה', 'תאריך יעד', 'בוצע', 'תאריך ביצוע']];
       data.tasks.forEach((t) => t._subtasks.forEach((x) => sub.push([t.title, x.title, dfmt(x.dueDate), x.done ? 'כן' : 'לא', x.doneAt ? fmtDT(x.doneAt) : ''])));
-      const log = [['משימה', 'סוג', 'תאריך ושעה', 'נרשם ע"י', 'תוכן']];
-      data.tasks.forEach((t) => (t.comments || []).filter((c) => c.type !== 'system').forEach((c) => log.push([t.title, (LOG_TYPES[c.type] || LOG_TYPES.note).l, fmtDT(c.at), c.by, c.text])));
+      const log = [['משימה', 'תת‑משימה', 'סוג', 'תאריך ושעה', 'נרשם ע"י', 'תוכן']];
+      data.tasks.forEach((t) => (t.comments || []).filter((c) => c.type !== 'system').forEach((c) => log.push([t.title, c.subId ? ((t._subtasks.find((y) => y.id === c.subId) || {}).title || '') : '', (LOG_TYPES[c.type] || LOG_TYPES.note).l, fmtDT(c.at), c.by, c.text])));
       if (sub.length > 1) { const ws = XLSX.utils.aoa_to_sheet(sub); ws['!cols'] = [{ wch: 34 }, { wch: 40 }, { wch: 12 }, { wch: 8 }, { wch: 16 }]; XLSX.utils.book_append_sheet(wb, ws, 'תתי משימות'); }
-      if (log.length > 1) { const ws = XLSX.utils.aoa_to_sheet(log); ws['!cols'] = [{ wch: 34 }, { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 60 }]; XLSX.utils.book_append_sheet(wb, ws, 'יומן'); }
+      if (log.length > 1) { const ws = XLSX.utils.aoa_to_sheet(log); ws['!cols'] = [{ wch: 34 }, { wch: 28 }, { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 60 }]; XLSX.utils.book_append_sheet(wb, ws, 'יומן'); }
     }
     XLSX.writeFile(wb, `${R.title || 'דוח'} ${today()}.xlsx`);
     DB.log('הפיק/ה דוח Excel', 'report', R.title);
@@ -2088,7 +2116,7 @@ window.DEMO_SEED = function () {
       const L = { priority: 'עדיפות', assignee: 'אחראי/ת', dueDate: 'יעד', status: 'סטטוס' };
       const show = (k, val) => k === 'priority' ? (PRIORITY[val] || {}).l : k === 'status' ? SSTATUS[val].l : k === 'dueDate' ? dfmt(val) : val;
       await updateSubs(tg.tid, (l) => { const y = l.find((z) => z.id === tg.sid); y[f] = v; if (f === 'status') { y.done = v === 'done'; y.doneAt = v === 'done' ? new Date().toISOString() : ''; } },
-        `תת‑משימה "${x ? x.title : ''}" — ${L[f]}: ${show(f, v) || '—'}`); return; }
+        `תת‑משימה "${x ? x.title : ''}" — ${L[f]}: ${show(f, v) || '—'}`, tg.sid); return; }
     if (tg.subToggle) { const t = byId('tasks', tg.tid); const x = (t.subtasks || []).find((y) => y.id === tg.subToggle); const on = e.target.checked;
       await updateSubs(tg.tid, (l) => { const y = l.find((z) => z.id === tg.subToggle); y.done = on; y.doneAt = on ? new Date().toISOString() : ''; }, `${on ? 'בוצעה' : 'סומנה כלא בוצעה'} תת‑משימה: ${x ? x.title : ''}`); return; }
     if (tg.subDue) { const t = byId('tasks', tg.tid); const x = (t.subtasks || []).find((y) => y.id === tg.subDue); const v = e.target.value;
@@ -2166,12 +2194,19 @@ window.DEMO_SEED = function () {
       case 'comment': { const v = $('#cmt').value.trim(); if (!v) return toast('כתוב מה לרשום ביומן', 'error'); const t = byId('tasks', id);
         const type = ($('#logType .chip.on') || {}).dataset?.v || 'note'; const atEl = $('#cmtAt'); const atv = atEl.value; const at = atv && atv !== atEl.dataset.default ? new Date(atv).toISOString() : undefined;
         $('#cmt').value = '';
-        await DB.update('tasks', id, { comments: [...(t.comments || []), logEntry(v, type, at)] }); toast('נרשם ביומן', 'ok'); break; }
+        const subT = $('#cmtSub') ? $('#cmtSub').value : '';
+        if ($('#cmtSub')) $('#cmtSub').value = '';
+        await DB.update('tasks', id, { comments: [...(t.comments || []), logEntry(v, type, at, subT || undefined)] }); toast(subT ? 'נרשם בתת‑המשימה' : 'נרשם ביומן', 'ok'); break; }
       case 'acttab': S.actTab = el.dataset.v; openTask(S._openDetail[1]); break;
       case 'logtype': $$('#logType .chip').forEach((c) => c.classList.toggle('on', c === el)); break;
+      case 'sub-notes': S.openSub = S.openSub === el.dataset.sid ? null : el.dataset.sid; if (S._openDetail) openTask(S._openDetail[1]);
+        setTimeout(() => { const n = $('#subCmt'); n && n.focus(); }, 60); break;
+      case 'sub-comment': { const inp = $('#subCmt'); const v = inp.value.trim(); if (!v) return inp.focus(); const t = byId('tasks', id);
+        const atEl = $('#subCmtAt'); const at = atEl.value && atEl.value !== atEl.dataset.default ? new Date(atEl.value).toISOString() : undefined;
+        inp.value = ''; await DB.update('tasks', id, { comments: [...(t.comments || []), logEntry(v, $('#subLogType').value, at, el.dataset.sid)] }); toast('נרשם בתת‑המשימה', 'ok'); break; }
       case 'sub-add': { const ti = $('#subTitle'); const v = ti.value.trim(); if (!v) return ti.focus(); const due = $('#subDue').value;
         ti.value = ''; $('#subDue').value = '';
-        await updateSubs(id, (l) => l.push({ id: sid(), title: v, dueDate: due, done: false, status: 'new', priority: 'normal', createdAt: new Date().toISOString(), by: DB.user.name }), `נוספה תת‑משימה: ${v}${due ? ' (יעד ' + dfmt(due) + ')' : ''}`);
+        const nsid = sid(); await updateSubs(id, (l) => l.push({ id: nsid, title: v, dueDate: due, done: false, status: 'new', priority: 'normal', createdAt: new Date().toISOString(), by: DB.user.name }), `נוספה תת‑משימה: ${v}${due ? ' (יעד ' + dfmt(due) + ')' : ''}`, nsid);
         setTimeout(() => { const n = $('#subTitle'); n && n.focus(); }, 80); break; }
       case 'sub-del': { if (!(await ask('למחוק את תת‑המשימה?'))) return; const t = byId('tasks', id); const x = (t.subtasks || []).find((y) => y.id === el.dataset.sid);
         await updateSubs(id, (l) => { const i = l.findIndex((y) => y.id === el.dataset.sid); if (i >= 0) l.splice(i, 1); }, x ? `נמחקה תת‑משימה: ${x.title}` : ''); break; }
@@ -2213,10 +2248,11 @@ window.DEMO_SEED = function () {
     if (tg.tedit) { const v = e.target.innerText.trim(); if (tg.tedit === 'title' && !v) { e.target.innerText = byId('tasks', tg.tid).title; return; } await setTaskField(tg.tid, tg.tedit, v); }
     if (tg.sedit) { const v = e.target.innerText.trim(); const t = byId('tasks', tg.tid); const x = (t.subtasks || []).find((y) => y.id === tg.sedit);
       if (!v || !x || x.title === v) { if (x) e.target.innerText = x.title; return; }
-      await updateSubs(tg.tid, (l) => { l.find((z) => z.id === tg.sedit).title = v; }, `תת‑משימה שונתה: "${x.title}" ← "${v}"`); }
+      await updateSubs(tg.tid, (l) => { l.find((z) => z.id === tg.sedit).title = v; }, `תת‑משימה שונתה: "${x.title}" ← "${v}"`, tg.sedit); }
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && (e.target.dataset?.sedit || e.target.dataset?.tedit === 'title')) { e.preventDefault(); e.target.blur(); return; }
+    if (e.key === 'Enter' && e.target.id === 'subCmt') { e.preventDefault(); $('[data-act=sub-comment]').click(); return; }
     if (e.key === 'Enter' && e.target.dataset?.tagAdd) { e.preventDefault(); const tid = e.target.dataset.tagAdd; const v = e.target.value.trim().replace(/^#/, ''); if (!v) return; const t = byId('tasks', tid);
       if (!(t.tags || []).includes(v)) DB.update('tasks', tid, { tags: [...(t.tags || []), v], comments: [...(t.comments || []), logEntry('נוספה תגית #' + v)] }); e.target.value = ''; return; } if (e.key === 'Escape') closeModal(); if (e.key === 'Enter' && e.target.id === 'subTitle') { e.preventDefault(); $('[data-act=sub-add]').click(); }
     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.id === 'cmt') { e.preventDefault(); $('[data-act=comment]').click(); } });
