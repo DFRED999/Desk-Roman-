@@ -369,21 +369,16 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <!-- קוד האתר -->
-  <!-- ============ הדבק כאן את פרטי Firebase (שלב 6 בהוראות) ============ -->
+  <!-- ============ פרטי Firebase ============ -->
 <script>
-/* ==========================================================
-   הגדרות Firebase
-   1. היכנס ל- https://console.firebase.google.com ופתח פרויקט
-   2. Project settings → Your apps → Web app → העתק את ה-config לכאן
-   כל עוד apiKey ריק — האתר עובד במצב הדגמה (שמירה מקומית בדפדפן בלבד)
-   ========================================================== */
+/* הגדרות Firebase — פרויקט desk-roman */
 window.FIREBASE_CONFIG = {
-  apiKey: "",
-  authDomain: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: ""
+  apiKey: "AIzaSyC7uLS22Qkj2tLaoRHJmquYprEqJcJpp4M",
+  authDomain: "desk-roman.firebaseapp.com",
+  projectId: "desk-roman",
+  storageBucket: "desk-roman.firebasestorage.app",
+  messagingSenderId: "84492522778",
+  appId: "1:84492522778:web:c162977de225ad0d3608a3"
 };
 
 </script>
@@ -488,13 +483,20 @@ window.DEMO_SEED = function () {
         resolve(DB.user);
         return;
       }
-      auth.onAuthStateChanged(async (u) => {
-        if (!u) { DB.user = null; resolve(null); DB._userCbs.forEach((cb) => cb(null)); return; }
-        let profile = {};
-        try { const d = await fs.collection('users').doc(u.uid).get(); profile = d.exists ? d.data() : {}; } catch (e) {}
-        DB.user = { uid: u.uid, email: u.email, name: profile.name || u.displayName || u.email, role: profile.role || 'assistant' };
+      // כניסה אוטומטית ללא סיסמה (Anonymous). הזהות נבחרת פעם אחת בכל מכשיר.
+      auth.onAuthStateChanged((u) => {
+        if (!u) {
+          auth.signInAnonymously().catch((err) => {
+            console.error(err);
+            document.body.innerHTML = '<div style="font-family:Heebo,sans-serif;direction:rtl;padding:40px;text-align:center">'
+              + '<h2>לא ניתן להתחבר ל‑Firebase</h2><p>יש להפעיל Anonymous ב‑Authentication → Sign-in method.</p><p style="color:#888">' + err.code + '</p></div>';
+          });
+          return;
+        }
+        let profile = null;
+        try { profile = JSON.parse(localStorage.getItem(LS_KEY + '-profile')); } catch (e) {}
+        DB.user = { uid: u.uid, email: '', name: (profile && profile.name) || '', role: (profile && profile.role) || '', needsProfile: !profile };
         resolve(DB.user);
-        DB._userCbs.forEach((cb) => cb(DB.user));
       });
     });
   };
@@ -503,6 +505,8 @@ window.DEMO_SEED = function () {
   DB.signIn = (email, pw) => auth.signInWithEmailAndPassword(email, pw);
   DB.signOut = () => (useFirebase ? auth.signOut() : Promise.resolve());
   DB.resetPassword = (email) => auth.sendPasswordResetEmail(email);
+  DB.setProfile = (name, role) => { try { localStorage.setItem(LS_KEY + '-profile', JSON.stringify({ name, role })); } catch (e) {} location.reload(); };
+  DB.clearProfile = () => { try { localStorage.removeItem(LS_KEY + '-profile'); } catch (e) {} location.reload(); };
   DB.setDemoRole = (role) => { try { localStorage.setItem(LS_KEY + '-role', role); } catch (e) {} location.reload(); };
   DB.resetDemo = () => { try { localStorage.removeItem(LS_KEY); } catch (e) {} location.reload(); };
 
@@ -1422,7 +1426,7 @@ window.DEMO_SEED = function () {
         <p>מחובר/ת: <b>${esc(u.name)}</b> ${u.email ? `(${esc(u.email)})` : ''} · תפקיד: <b>${u.role === 'commander' ? 'מפקד' : u.role === 'admin' ? 'מנהל' : 'רל"שית'}</b></p>
         ${DB.mode === 'demo' ? `<div class="banner warn">מצב הדגמה: הנתונים נשמרים רק בדפדפן הזה. לחיבור אמיתי מלא את <b>js/firebase-config.js</b> (הוראות ב‑README).</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button class="btn" data-act="role" data-v="commander">כניסה כמפקד</button><button class="btn" data-act="role" data-v="assistant">כניסה כרל"שית</button><button class="btn danger" data-act="reset-demo">איפוס הדגמה</button></div>`
-          : `<button class="btn" data-act="logout" style="margin-bottom:12px">התנתקות</button>`}
+          : `<button class="btn" data-act="switch-user" style="margin-bottom:12px">החלף משתמש במכשיר הזה</button>`}
         <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="backup">⬇ גיבוי JSON</button><label class="btn">⬆ שחזור מגיבוי<input type="file" accept="application/json" id="restore" hidden></label></div>
       </div></div>`;
     return shell(content, 'הגדרות');
@@ -1626,6 +1630,7 @@ window.DEMO_SEED = function () {
       case 'save-settings': { const d = readForm($('#setForm')); await DB.set('settings', 'main', d); toast('ההגדרות נשמרו', 'ok'); break; }
       case 'role': DB.setDemoRole(el.dataset.v); break;
       case 'reset-demo': if (await ask('לאפס את נתוני ההדגמה?')) DB.resetDemo(); break;
+      case 'switch-user': DB.clearProfile(); break;
       case 'logout': DB.signOut().then(() => location.reload()); break;
       case 'backup': { const blob = new Blob([JSON.stringify(DB.exportAll(S), null, 2)], { type: 'application/json' }); const l = document.createElement('a'); l.href = URL.createObjectURL(blob); l.download = `גיבוי-מרכז-שליטה-${today()}.json`; l.click(); break; }
       case 'notif': if ('Notification' in window) Notification.requestPermission().then((p) => { toast(p === 'granted' ? 'התראות דפדפן הופעלו' : 'ההרשאה לא ניתנה'); if (p === 'granted') notifyDue(true); }); break;
@@ -1662,8 +1667,21 @@ window.DEMO_SEED = function () {
   }
 
   /* ---------------- הפעלה ---------------- */
+  function profileView() {
+    $('#root').innerHTML = `<div class="login"><form class="box" id="profForm"><div class="brand-logo" style="width:56px;height:56px;font-size:26px;color:#fff">✦</div>
+      <h1>מי נכנס?</h1><p>בוחרים פעם אחת במכשיר הזה. אפשר לשנות בהגדרות.</p>
+      <div class="chips" style="margin-bottom:14px" id="roleChips">
+        <span class="chip on" data-role="commander">מפקד</span><span class="chip" data-role="assistant">רל"שית</span><span class="chip" data-role="admin">מנהל</span></div>
+      <div class="field"><label>השם שיוצג</label><input name="name" required placeholder="למשל: דניס"></div>
+      <button class="btn primary" style="width:100%;padding:13px">כניסה</button></form></div>`;
+    let role = 'commander';
+    $$('#roleChips .chip').forEach((c) => { c.onclick = () => { role = c.dataset.role; $$('#roleChips .chip').forEach((x) => x.classList.toggle('on', x === c)); }; });
+    $('#profForm').onsubmit = (e) => { e.preventDefault(); DB.setProfile(e.target.name.value.trim(), role); };
+  }
+
   DB.init().then((user) => {
     if (!user) return loginView();
+    if (user.needsProfile) return profileView();
     ['orders', 'agreements', 'tasks', 'notes', 'activity'].forEach((c) => DB.subscribe(c, (arr) => { S[c] = arr; scheduleRender(); }));
     DB.subscribe('settings', (arr) => { S.settingsDocs = arr; scheduleRender(); });
     window.addEventListener('hashchange', () => { S.q = ''; const sr = $('#search-results'); sr && (sr.innerHTML = ''); render(); window.scrollTo(0, 0); });
