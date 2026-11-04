@@ -363,7 +363,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
   <!-- ספריות -->
   <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-auth-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-database-compat.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -375,6 +375,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
 window.FIREBASE_CONFIG = {
   apiKey: "AIzaSyC7uLS22Qkj2tLaoRHJmquYprEqJcJpp4M",
   authDomain: "desk-roman.firebaseapp.com",
+  databaseURL: "https://desk-roman-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "desk-roman",
   storageBucket: "desk-roman.firebasestorage.app",
   messagingSenderId: "84492522778",
@@ -432,7 +433,7 @@ window.DEMO_SEED = function () {
 </script>
   <script>
 /* ==========================================================
-   שכבת נתונים — Firebase (Firestore + Auth) או מצב הדגמה מקומי
+   שכבת נתונים — Firebase (Realtime Database + Auth) או מצב הדגמה מקומי
    ========================================================== */
 (function (global) {
   'use strict';
@@ -466,13 +467,14 @@ window.DEMO_SEED = function () {
   }
 
   /* ---------------- Firebase ---------------- */
-  let fs = null, auth = null;
+  let rt = null, auth = null;
   if (useFirebase) {
     firebase.initializeApp(cfg);
-    fs = firebase.firestore();
-    try { fs.enablePersistence({ synchronizeTabs: true }).catch(() => {}); } catch (e) {}
+    rt = firebase.database();
     auth = firebase.auth();
   }
+  // Realtime Database לא מקבל undefined / NaN
+  const clean = (o) => JSON.parse(JSON.stringify(o));
 
   DB.init = function () {
     return new Promise((resolve) => {
@@ -513,8 +515,9 @@ window.DEMO_SEED = function () {
   DB.subscribe = function (col, cb) {
     (DB._listeners[col] = DB._listeners[col] || []).push(cb);
     if (!useFirebase) { emit(col); return; }
-    fs.collection(col).onSnapshot((snap) => {
-      cb(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    rt.ref(col).on('value', (snap) => {
+      const v = snap.val() || {};
+      cb(Object.entries(v).map(([id, d]) => ({ id, ...d })));
     }, (err) => { console.error(col, err); global.toast && global.toast('שגיאת הרשאה בקריאת ' + col, 'error'); });
   };
 
@@ -528,23 +531,24 @@ window.DEMO_SEED = function () {
   DB.add = async function (col, data) {
     const d = stamp(data, true);
     if (!useFirebase) { const id = uid(); demo[col][id] = d; saveDemo(); emit(col); return id; }
-    const ref = await fs.collection(col).add(d);
-    return ref.id;
+    const ref = rt.ref(col).push();
+    await ref.set(clean(d));
+    return ref.key;
   };
   DB.set = async function (col, id, data) {
     const d = stamp(data, false);
     if (!useFirebase) { demo[col][id] = { ...(demo[col][id] || {}), ...d }; saveDemo(); emit(col); return id; }
-    await fs.collection(col).doc(id).set(d, { merge: true });
+    await rt.ref(col + '/' + id).update(clean(d));
     return id;
   };
   DB.update = async function (col, id, patch) {
     const d = stamp(patch, false);
     if (!useFirebase) { demo[col][id] = { ...(demo[col][id] || {}), ...d }; saveDemo(); emit(col); return; }
-    await fs.collection(col).doc(id).update(d);
+    await rt.ref(col + '/' + id).update(clean(d));
   };
   DB.remove = async function (col, id) {
     if (!useFirebase) { delete demo[col][id]; saveDemo(); emit(col); return; }
-    await fs.collection(col).doc(id).delete();
+    await rt.ref(col + '/' + id).remove();
   };
 
   /* גיבוי ושחזור */
