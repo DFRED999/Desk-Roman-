@@ -296,6 +296,30 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
 .report-doc .sum { display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap; }
 .report-doc .sum div { background: #f3f5fb; border-radius: 8px; padding: 6px 10px; font-size: 12px; }
 
+
+/* ---------- תתי-משימות ויומן ---------- */
+.subs { display: flex; flex-direction: column; gap: 6px; }
+.subs .sub { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; background: var(--surface-2); border: 1px solid var(--border); }
+.subs .sub input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--c-ok); flex-shrink: 0; cursor: pointer; }
+.subs .sub .sub-t { flex: 1; min-width: 0; }
+.subs .sub .sub-t small { display: block; color: var(--muted); font-size: 11.5px; }
+.subs .sub.done .sub-t { text-decoration: line-through; color: var(--muted); }
+.subs .sub input[type=date] { border: 1px solid var(--border); border-radius: 8px; padding: 5px 6px; background: var(--surface); font-size: 13px; }
+.subs .sub input[type=date].late { border-color: var(--c-alert); color: var(--c-alert); background: var(--c-alert-soft); }
+.sub-add { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.sub-add input { padding: 9px 11px; border: 1px dashed #f2b27a; border-radius: 10px; background: #fffaf5; }
+.sub-add input#subTitle { flex: 1; min-width: 160px; }
+.log-add { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 14px; background: var(--c-tasks-soft); margin-bottom: 12px; }
+.log-add textarea { min-height: 60px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; resize: vertical; background: var(--surface); }
+.log-add input[type=datetime-local] { padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); }
+.log { display: flex; flex-direction: column; gap: 8px; }
+.log-item { display: flex; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border); }
+.log-item.sys { background: transparent; border-style: dashed; font-size: 13px; color: var(--muted); padding: 6px 10px; }
+.log-ic { font-size: 18px; line-height: 1.2; }
+.log-h { font-size: 13px; margin-bottom: 2px; display: flex; gap: 6px; flex-wrap: wrap; }
+.log-h span { color: var(--muted); margin-inline-start: auto; font-size: 12px; }
+@media (max-width: 760px) { .sub-add input, .log-add textarea, .log-add input { font-size: 16px; } }
+
 /* ==========================================================
    אייפד
    ========================================================== */
@@ -354,6 +378,115 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
   .main { margin: 0; }
 }
 
+/* ---------- חלון משימה בסגנון לוח עבודה ---------- */
+.modal.jira-modal { width: min(1180px, 100%); }
+.jira { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 28px; align-items: start; }
+.j-main { min-width: 0; }
+.j-crumb { font-size: 13px; color: var(--muted); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.j-key { display: inline-block; font-size: 11.5px; font-weight: 700; color: var(--c-orders); background: var(--c-orders-soft); border-radius: 6px; padding: 1px 6px; direction: ltr; font-variant-numeric: tabular-nums; }
+.j-key.big { font-size: 12.5px; }
+.j-h { font-size: 24px; font-weight: 800; margin: 8px 0 14px; padding: 4px 6px; margin-inline: -6px; border-radius: 8px; outline: none; }
+.j-h:hover, .j-desc:hover, .j-t:hover { background: var(--surface-2); }
+.j-h:focus, .j-desc:focus, .j-t:focus { background: var(--surface); box-shadow: 0 0 0 2px var(--c-orders); }
+.j-sec { margin-bottom: 22px; }
+.j-sec-h { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.j-sec-h h4 { margin: 0; font-size: 15px; }
+.j-desc { min-height: 44px; padding: 8px 10px; border-radius: 8px; white-space: pre-wrap; outline: none; line-height: 1.55; }
+.j-desc:empty::before { content: attr(data-ph); color: var(--muted); }
+.j-prog { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 13px; color: var(--muted); }
+.j-prog .bar { flex: 1; height: 8px; }
+.j-table { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.j-tr { display: grid; grid-template-columns: minmax(0, 1fr) 92px 140px 128px 100px 34px; gap: 8px; align-items: center; padding: 7px 10px; border-top: 1px solid var(--border); }
+.j-tr:first-child { border-top: 0; }
+.j-th { background: var(--surface-2); font-size: 12px; font-weight: 700; color: var(--muted); }
+.j-tr.done .j-t { text-decoration: line-through; color: var(--muted); }
+.j-title { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.j-t { flex: 1; min-width: 0; padding: 3px 5px; border-radius: 6px; outline: none; overflow-wrap: anywhere; }
+.j-sel, .j-in { width: 100%; padding: 5px 7px; border: 1px solid transparent; border-radius: 7px; background: transparent; font-size: 13.5px; cursor: pointer; }
+.j-sel:hover, .j-in:hover { border-color: var(--border); background: var(--surface); }
+.j-sel:focus, .j-in:focus { border-color: var(--c-orders); background: var(--surface); outline: none; }
+.j-in.late { color: var(--c-alert); font-weight: 700; }
+.j-st { font-weight: 600; border-radius: 6px; }
+.j-st.gray { background: #eceef5; } .j-st.warn { background: var(--c-warn-soft); color: #92400e; } .j-st.ok { background: var(--c-ok-soft); color: #166534; }
+.j-ass { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.av { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center; font-size: 11.5px; font-weight: 700; color: #fff; background: linear-gradient(135deg, var(--c-report), var(--c-notes)); }
+.j-add { grid-template-columns: minmax(0, 1fr) 140px auto; background: #fffaf5; }
+.j-add input { padding: 7px 9px; border: 1px dashed #f2b27a; border-radius: 8px; background: var(--surface); }
+.j-tabs { display: flex; gap: 4px; margin-bottom: 10px; border-bottom: 1px solid var(--border); }
+.j-tabs span { padding: 7px 12px; cursor: pointer; font-size: 13.5px; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.j-tabs span.on { color: var(--c-orders); border-color: var(--c-orders); font-weight: 600; }
+.j-side { position: sticky; top: 0; }
+.j-status { padding: 8px 12px; border-radius: 9px; border: 0; font-weight: 700; cursor: pointer; }
+.j-status.s-new { background: #eceef5; } .j-status.s-progress { background: var(--c-tasks-soft); color: #9a3412; }
+.j-status.s-waiting { background: var(--c-report-soft); color: #5b21b6; } .j-status.s-done { background: var(--c-ok-soft); color: #166534; }
+.j-card { border: 1px solid var(--border); border-radius: 12px; padding: 6px 14px 10px; }
+.j-card-h { font-weight: 700; padding: 8px 0; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+.j-row { display: grid; grid-template-columns: 100px minmax(0, 1fr); align-items: center; gap: 8px; min-height: 40px; font-size: 14px; }
+.j-lbl { color: var(--muted); font-size: 13px; }
+.j-meta { color: var(--muted); font-size: 12px; margin-top: 10px; line-height: 1.6; }
+.log-item .av { width: 28px; height: 28px; }
+@media (max-width: 900px) {
+  .jira { grid-template-columns: 1fr; }
+  .j-side { position: static; order: -1; }
+  .j-th { display: none; }
+  .j-tr { grid-template-columns: 1fr 1fr; padding: 10px; }
+  .j-tr .j-title { grid-column: 1 / -1; }
+  .j-tr > div:last-child { grid-column: 2; justify-self: end; }
+  .j-add { grid-template-columns: 1fr; }
+}
+
+/* ---------- קישורים ותיקים ---------- */
+.lchip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 99px; font-size: 12.5px; font-weight: 600; cursor: pointer; border: 1px solid transparent; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.lchip b { font-weight: 700; opacity: .55; padding-inline-start: 2px; }
+.lchip b:hover { opacity: 1; color: var(--c-alert); }
+.lc-project { background: var(--c-report-soft); color: #5b21b6; }
+.lc-person { background: var(--c-agree-soft); color: #0f766e; }
+.lc-order { background: var(--c-orders-soft); color: #1d4ed8; }
+.lc-agreement { background: #dff3ea; color: #166534; }
+.lc-tag { background: var(--c-tasks-soft); color: #9a3412; }
+.j-sug { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; font-size: 12px; color: var(--muted); align-items: center; }
+.j-sug span { cursor: pointer; border: 1px dashed var(--border); border-radius: 99px; padding: 2px 8px; }
+.j-sug span:hover { border-color: var(--c-report); color: var(--c-report); }
+.pick-list { max-height: 46vh; overflow: auto; display: flex; flex-direction: column; gap: 6px; }
+.pick-row { display: flex; gap: 10px; align-items: center; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--border); cursor: pointer; }
+.pick-row:hover { background: var(--surface-2); }
+.pick-row.on { background: var(--c-ok-soft); border-color: #9fdcb5; }
+.pick-row .sub { color: var(--muted); font-size: 12.5px; }
+.ent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-bottom: 18px; }
+.ent-card { background: var(--surface); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); cursor: pointer; border-top: 4px solid var(--ec); transition: transform .12s; }
+.ent-card:hover { transform: translateY(-2px); }
+.ent-card .row { display: flex; gap: 10px; align-items: center; }
+.ent-card .sub { color: var(--muted); font-size: 12.5px; }
+.ent-ic { font-size: 22px; }
+.ent-ic.big { font-size: 34px; }
+.ent-ic.big .av { width: 48px; height: 48px; font-size: 20px; }
+.ent-stats { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; font-size: 13px; color: var(--muted); }
+.ent-stats b { color: var(--text); }
+.ent-stats em { color: var(--c-alert); font-style: normal; font-weight: 700; }
+.modal.ent-modal { width: min(1180px, 100%); }
+.ent-head { display: flex; gap: 14px; align-items: center; margin-bottom: 16px; }
+.ent-head h2 { margin: 0; font-size: 24px; }
+.ent-head .sub { color: var(--muted); font-size: 13.5px; margin-top: 4px; }
+.ent-contact { margin-top: 6px; display: flex; gap: 14px; flex-wrap: wrap; }
+.ent-kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 16px; }
+.ent-kpis > div { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
+.ent-kpis b { display: block; font-size: 22px; }
+.ent-kpis span { font-size: 12px; color: var(--muted); }
+.ent-kpis .bad b { color: var(--c-alert); }
+.ent-cols { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 20px; }
+.ent-sec { margin-bottom: 18px; }
+.ent-sec-h { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.ent-sec-h h4 { margin: 0; font-size: 15px; }
+.ent-row { display: flex; gap: 10px; align-items: center; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 6px; cursor: pointer; }
+.ent-row:hover { background: var(--surface-2); }
+.ent-row .bar { margin-top: 6px; }
+.ent-row .sub { color: var(--muted); font-size: 12.5px; }
+.ent-done summary { cursor: pointer; color: var(--muted); margin: 4px 0 10px; }
+.more-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.more-nav a { display: flex; gap: 10px; align-items: center; padding: 14px; border-radius: 12px; background: var(--surface-2); color: var(--text); text-decoration: none; font-weight: 600; }
+@media (max-width: 900px) { .ent-cols { grid-template-columns: 1fr; } .ent-kpis { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 760px) { .ent-kpis { grid-template-columns: 1fr 1fr; } .ent-grid { grid-template-columns: 1fr; } }
+
 </style>
 </head>
 <body>
@@ -392,7 +525,7 @@ window.DEMO_SEED = function () {
   return {
     orders: {
       o1: { ...base, orderNumber: '4441493064', version: '0', demandNumber: '0088060008', supplier: 'ב.ד. אטלס הנדסה וניהול פרויקטים', supplierNumber: '11027652',
-        description: 'תאום אחזקת בינוי / מנהלת גבולות ותפר', unit: 'מנהלת גבולות ותפר', buyer: 'מירי גבאי', method: 'שעתונים', paymentTerms: 45,
+        description: 'תאום אחזקת בינוי / מנהלת גבולות ותפר', unit: 'מנהלת גבולות ותפר', buyer: 'מירי גבאי', method: 'שעתונים', paymentTerms: 45, projectId: 'p1',
         demandBudget: 329400, budgetExVat: 329400, vat: 59292, budgetTotal: 388692, utilized: 241500,
         startDate: '2025-12-14', endDate: '2026-12-13', consultants: [{ name: 'דנה מנצור', hours: 1800, rate: 183, total: 329400 }],
         history: [{ type: 'create', date: '2025-12-14', note: 'נקלט מקובץ ההזמנה' }] },
@@ -420,11 +553,20 @@ window.DEMO_SEED = function () {
       t2: { ...base, title: 'לתאם סיור שטח עם קבלן הגדרות', priority: 'high', status: 'new', dueDate: d(5), assignee: 'הרל"שית', category: 'שטח', comments: [] },
       t3: { ...base, title: 'להכין טבלת חידוש הסכמים לרבעון הבא', priority: 'normal', status: 'waiting', dueDate: d(14), assignee: 'הרל"שית', category: 'הסכמים', linkAgreement: 'a1', comments: [] },
       t4: { ...base, title: 'להוציא סיכום ישיבת צוות', priority: 'normal', status: 'new', dueDate: d(-1), assignee: 'הרל"שית', category: 'מנהלה', comments: [] },
+      t6: { ...base, num: 6, title: 'להגיש חשבון חודשי — דנה מנצור', priority: 'high', status: 'new', dueDate: d(3), assignee: 'הרל"שית', tags: ['חשבון'], links: [{ type: 'person', id: 'u1' }, { type: 'project', id: 'p1' }, { type: 'order', id: 'o1' }], subtasks: [{ id: 's1', title: 'לקבל דוח שעות', status: 'done', done: true, dueDate: d(-1) }, { id: 's2', title: 'להפיק חשבון', status: 'new', dueDate: d(2) }], comments: [{ by: 'דניס', at: ts, type: 'received', text: 'התקבל דוח שעות לאוקטובר' }] },
       t5: { ...base, title: 'להעביר חשבון חודשי לאישור', priority: 'low', status: 'done', dueDate: d(-4), assignee: 'הרל"שית', category: 'כספים', comments: [], doneAt: ts },
     },
     notes: {
       n1: { ...base, text: 'להתקשר למירי גבאי לגבי גרסה 1', color: 'yellow' },
       n2: { ...base, text: 'המפקד ביקש: מצגת תקציב לישיבה ביום ה׳', color: 'pink', pinned: true },
+    },
+    projects: {
+      p1: { ...base, name: 'מנהלת גבולות ותפר — אחזקת בינוי', code: 'MGT-01', status: 'active', client: 'משהב"ט — אגף ההנדסה והבינוי', manager: 'דניס' },
+      p2: { ...base, name: 'כבישי ביטחון — דרום', code: 'RD-04', status: 'active', client: 'משהב"ט' },
+    },
+    people: {
+      u1: { ...base, name: 'דנה מנצור', type: 'יועץ / נותן שירות', role: 'מתאמת אחזקה', company: 'ב.ד. אטלס', projectId: 'p1' },
+      u2: { ...base, name: 'מירי גבאי', type: 'גורם במשהב"ט', role: 'ר׳ חט׳ התקשרויות עם מתכננים', company: 'משהב"ט', phone: '073-387-7128' },
     },
     activity: {}, settings: { main: { alertDays: 30, warnDays: 60, utilWarn: 80, utilCritical: 90, reportPresets: [] } }, users: {},
   };
@@ -437,7 +579,7 @@ window.DEMO_SEED = function () {
    ========================================================== */
 (function (global) {
   'use strict';
-  const COLLECTIONS = ['orders', 'agreements', 'tasks', 'notes', 'activity', 'settings', 'users'];
+  const COLLECTIONS = ['orders', 'agreements', 'tasks', 'notes', 'activity', 'settings', 'users', 'projects', 'people'];
   const LS_KEY = 'atlas-command-demo-v1';
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   const nowISO = () => new Date().toISOString();
@@ -697,9 +839,9 @@ window.DEMO_SEED = function () {
 
   /* ---------------- מצב ---------------- */
   const S = {
-    orders: [], agreements: [], tasks: [], notes: [], activity: [], settingsDocs: [],
+    orders: [], agreements: [], tasks: [], notes: [], activity: [], settingsDocs: [], projects: [], people: [],
     route: 'dashboard', q: '',
-    f: { orderStatus: 'all', agreeStatus: 'all', taskAssignee: 'all', taskPriority: 'all', taskView: 'kanban', sort: {} },
+    f: { orderStatus: 'all', agreeStatus: 'all', taskAssignee: 'all', taskPriority: 'all', taskLink: 'all', taskView: 'kanban', sort: {} },
   };
   const settings = () => Object.assign({ alertDays: 30, warnDays: 60, utilWarn: 80, utilCritical: 90, reportPresets: [], snoozed: {} },
     (S.settingsDocs.find((d) => d.id === 'main') || {}));
@@ -733,6 +875,8 @@ window.DEMO_SEED = function () {
     notes: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v11l-5 5H4z"/><path d="M15 20v-5h5"/></svg>',
     reports: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
     settings: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+    projects: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>',
+    people: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M17 11a3 3 0 1 0 0-6M22 21a6 6 0 0 0-4-5.6"/></svg>',
     bell: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
     search: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>',
   };
@@ -740,6 +884,8 @@ window.DEMO_SEED = function () {
     { id: 'dashboard', label: 'דשבורד', color: '#a78bfa' },
     { id: 'orders', label: 'הזמנות עבודה', color: '#60a5fa' },
     { id: 'agreements', label: 'הסכמים וחוזים', color: '#34d399' },
+    { id: 'projects', label: 'פרויקטים', color: '#c084fc' },
+    { id: 'people', label: 'אנשי קשר', color: '#2dd4bf' },
     { id: 'tasks', label: 'משימות', color: '#fbbf24' },
     { id: 'notes', label: 'פיתקיות', color: '#f472b6' },
     { id: 'reports', label: 'דוחות', color: '#c4b5fd' },
@@ -748,6 +894,11 @@ window.DEMO_SEED = function () {
   const PRIORITY = { urgent: { l: 'דחוף', c: 'bad' }, high: { l: 'גבוה', c: 'warn' }, normal: { l: 'רגיל', c: 'blue' }, low: { l: 'נמוך', c: 'gray' } };
   const TSTATUS = { new: { l: 'חדשה', color: '#2563eb' }, progress: { l: 'בטיפול', color: '#ea7a0c' }, waiting: { l: 'ממתין לגורם', color: '#7c3aed' }, done: { l: 'הושלמה', color: '#16a34a' } };
   const NOTE_COLORS = ['yellow', 'pink', 'blue', 'green', 'orange', 'violet'];
+  const LOG_TYPES = { note: { l: 'הערה', i: '📝' }, update: { l: 'עדכון', i: '🔄' }, sent: { l: 'נשלח חומר', i: '📤' }, received: { l: 'התקבל חומר', i: '📥' },
+    call: { l: 'שיחה', i: '📞' }, meeting: { l: 'פגישה', i: '🤝' }, system: { l: 'מערכת', i: '⚙️' } };
+  const sid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const logEntry = (text, type = 'system', at) => ({ by: DB.user.name, at: at || new Date().toISOString(), text, type });
+  const subStats = (t) => { const l = t.subtasks || []; return { total: l.length, done: l.filter((x) => x.done).length }; };
 
   /* ---------------- סטטוסים ---------------- */
   function orderStatus(o) {
@@ -798,7 +949,13 @@ window.DEMO_SEED = function () {
         title: `ניצול ${p}% מערך היעד`, sub: `${a.name || a.agreementNumber}`, days: null, pct: p, open: ['agreement', a.id] });
     });
     S.tasks.forEach((t) => {
-      if (t.status === 'done' || !t.dueDate) return;
+      if (t.status === 'done') return;
+      (t.subtasks || []).forEach((x) => {
+        if (x.done || !x.dueDate) return; const d = daysLeft(x.dueDate);
+        if (d < 0) out.push({ key: 'so-' + t.id + '-' + x.id, level: 'bad', ic: '☑️', bg: 'var(--c-tasks-soft)', title: `תת‑משימה באיחור: ${x.title}`, sub: `במשימה: ${t.title}`, days: d, open: ['task', t.id] });
+        else if (d <= 1) out.push({ key: 'sd-' + t.id + '-' + x.id, level: 'info', ic: '☑️', bg: 'var(--c-tasks-soft)', title: `${d === 0 ? 'היום' : 'מחר'}: ${x.title}`, sub: `במשימה: ${t.title}`, days: d, open: ['task', t.id] });
+      });
+      if (!t.dueDate) return;
       const dl = daysLeft(t.dueDate);
       if (dl < 0) out.push({ key: 'to-' + t.id, level: 'bad', ic: '⏰', bg: 'var(--c-tasks-soft)', title: `משימה באיחור: ${t.title}`, sub: `יעד ${dfmt(t.dueDate)} · ${t.assignee || ''}`, days: dl, open: ['task', t.id] });
       else if (dl <= 1) out.push({ key: 'td-' + t.id, level: 'info', ic: '✅', bg: 'var(--c-tasks-soft)', title: `${dl === 0 ? 'היום' : 'מחר'}: ${t.title}`, sub: t.assignee || '', days: dl, open: ['task', t.id] });
@@ -841,8 +998,9 @@ window.DEMO_SEED = function () {
         <div id="search-results"></div>
         ${content}
       </main>
-      <nav class="bottom-nav">${['dashboard', 'orders', 'agreements', 'tasks', 'notes'].map((id) => { const x = NAV.find((y) => y.id === id);
-        return `<a href="#${id}" class="${S.route === id ? 'active' : ''}">${ICONS[id]}<span>${x.label.split(' ')[0]}</span>${counts[id] ? `<span class="count">${counts[id]}</span>` : ''}</a>`; }).join('')}</nav>
+      <nav class="bottom-nav">${['dashboard', 'tasks', 'projects', 'notes'].map((id) => { const x = NAV.find((y) => y.id === id);
+        return `<a href="#${id}" class="${S.route === id ? 'active' : ''}">${ICONS[id]}<span>${x.label.split(' ')[0]}</span>${counts[id] ? `<span class="count">${counts[id]}</span>` : ''}</a>`; }).join('')}
+        <a href="#" data-act="more-nav" class="${['orders', 'agreements', 'people', 'reports', 'config'].includes(S.route) ? 'active' : ''}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>עוד</span></a></nav>
       <button class="fab" data-act="fab">+</button>
       <div class="fab-menu" id="fabmenu">
         <button class="btn orange" data-act="quick-task">✅ משימה מהירה</button>
@@ -985,6 +1143,7 @@ window.DEMO_SEED = function () {
       ${f('vat', 'מע"מ (₪)', 'number')}${f('budgetTotal', 'סה"כ כולל מע"מ (₪)', 'number')}
       ${f('utilized', 'נוצל עד כה (₪, ללא מע"מ)', 'number')}${f('method', 'שיטת התקשרות')}
       ${f('startDate', 'תחילת תוקף', 'date')}${f('endDate', 'סוף תוקף', 'date')}
+      <div class="field full"><label>פרויקט</label><select name="projectId"><option value="">—</option>${S.projects.map((x) => `<option value="${x.id}" ${o.projectId === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></div>
       ${parentSel}
       <div class="field full"><label>יועצים / נותני שירות</label>
         <div id="consRows">${cons.map(consRow).join('')}</div>
@@ -1051,7 +1210,7 @@ window.DEMO_SEED = function () {
     const o = byId('orders', id); if (!o) return;
     const s = orderStatus(o); const p = pct(o.utilized || 0, o.budgetExVat); const dl = daysLeft(o.endDate);
     const ch = chain(o);
-    const tasks = S.tasks.filter((t) => t.linkOrder === id);
+    const tasks = S.tasks.filter((t) => hasLink(t, 'order', id));
     const info = (l, v) => `<div class="info"><small>${l}</small><b>${v}</b></div>`;
     const body = `
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap"><span class="pill ${s.c}">${s.l}</span>
@@ -1070,6 +1229,7 @@ window.DEMO_SEED = function () {
       ${tasks.length ? tasks.map(taskCard).join('') : '<div class="empty" style="padding:12px">אין משימות</div>'}
       ${o.notes ? `<div class="section-t">📝 הערות</div><div style="white-space:pre-wrap">${esc(o.notes)}</div>` : ''}`;
     modal(`הזמנה ${esc(o.orderNumber)}${o.version ? ` · גרסה ${esc(o.version)}` : ''}`, body, `
+      <button class="btn violet" data-act="open" data-kind="ent-order" data-id="${id}">🗂 תיק מלא</button>
       <button class="btn primary" data-act="edit-order" data-id="${id}">✏️ עריכה</button>
       <button class="btn" data-act="change" data-col="orders" data-type="increase" data-id="${id}">⬆ הגדלה</button>
       <button class="btn" data-act="change" data-col="orders" data-type="decrease" data-id="${id}">⬇ הפחתה</button>
@@ -1151,6 +1311,7 @@ window.DEMO_SEED = function () {
       ${f('agreementNumber', 'מספר הסכם')}${f('demandNumber', 'מספר דרישה')}
       ${f('name', 'שם ההסכם', 'text', 'full')}${f('contractor', 'קבלן')}
       <div class="field"><label>סוג</label><select name="kind">${['הסכם מחירים', 'חוזה', 'הסכם מסגרת'].map((k) => `<option ${a.kind === k ? 'selected' : ''}>${k}</option>`).join('')}</select></div>
+      <div class="field full"><label>פרויקט</label><select name="projectId"><option value="">—</option>${S.projects.map((x) => `<option value="${x.id}" ${a.projectId === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></div>
       ${f('targetValue', 'ערך יעד (₪)', 'number')}${f('utilized', 'נוצל עד כה (₪)', 'number')}
       ${f('startDate', 'תחילת תוקף', 'date')}${f('endDate', 'סוף תוקף', 'date')}
       <div class="field full"><label>הערות</label><textarea name="notes">${esc(a.notes || '')}</textarea></div></div></form>`,
@@ -1167,7 +1328,7 @@ window.DEMO_SEED = function () {
   function openAgreement(id) {
     const a = byId('agreements', id); if (!a) return;
     const s = agreeStatus(a); const p = pct(a.utilized || 0, a.targetValue);
-    const tasks = S.tasks.filter((t) => t.linkAgreement === id);
+    const tasks = S.tasks.filter((t) => hasLink(t, 'agreement', id));
     const info = (l, v) => `<div class="info"><small>${l}</small><b>${v}</b></div>`;
     modal(`${esc(a.name || 'הסכם')} · ${esc(a.agreementNumber || '')}`, `
       <div style="margin-bottom:14px"><span class="pill ${s.c}">${s.l}</span> <span class="pill gray">${esc(a.kind || 'הסכם')}</span></div>
@@ -1179,6 +1340,7 @@ window.DEMO_SEED = function () {
       <div class="section-t">✅ משימות קשורות <button class="btn sm orange" data-act="task-for" data-kind="agreement" data-id="${id}" style="margin-inline-start:auto">+ משימה</button></div>
       ${tasks.length ? tasks.map(taskCard).join('') : '<div class="empty" style="padding:12px">אין משימות</div>'}
       ${a.notes ? `<div class="section-t">📝 הערות</div><div style="white-space:pre-wrap">${esc(a.notes)}</div>` : ''}`, `
+      <button class="btn violet" data-act="open" data-kind="ent-agreement" data-id="${id}">🗂 תיק מלא</button>
       <button class="btn teal" data-act="edit-agreement" data-id="${id}">✏️ עריכה</button>
       <button class="btn" data-act="change" data-col="agreements" data-type="increase" data-id="${id}">⬆ הגדלת ערך יעד</button>
       <button class="btn" data-act="change" data-col="agreements" data-type="decrease" data-id="${id}">⬇ הפחתה</button>
@@ -1192,11 +1354,13 @@ window.DEMO_SEED = function () {
     const dl = t.dueDate ? daysLeft(t.dueDate) : null; const overdue = t.status !== 'done' && dl != null && dl < 0;
     const P = PRIORITY[t.priority] || PRIORITY.normal;
     const due = t.dueDate ? (dl === 0 ? 'היום' : dl === 1 ? 'מחר' : dfmt(t.dueDate)) : '';
-    const link = t.linkOrder ? `📄 ${esc((byId('orders', t.linkOrder) || {}).orderNumber || '')}` : t.linkAgreement ? `📑 ${esc((byId('agreements', t.linkAgreement) || {}).agreementNumber || '')}` : '';
+    const lk = linksOf(t); const link = lk.slice(0, 3).map((x) => `${LINK_T[x.type].i} ${esc(entName(x.type, x.id))}`).join(' · ') + (lk.length > 3 ? ` +${lk.length - 3}` : '') + (t.tags || []).slice(0, 2).map((g) => ` #${esc(g)}`).join('');
     return `<div class="task p-${t.priority || 'normal'} ${overdue ? 'overdue' : ''}" draggable="true" data-task="${t.id}" data-act="open" data-kind="task" data-id="${t.id}"
-      style="${t.status === 'done' ? 'opacity:.6' : ''}"><div class="t">${t.status === 'done' ? '✔ ' : ''}${esc(t.title)}</div>
+      style="${t.status === 'done' ? 'opacity:.6' : ''}"><div class="t"><span class="j-key">${keyOf(t)}</span> ${t.status === 'done' ? '✔ ' : ''}${esc(t.title)}</div>
       <div class="m"><span class="pill ${P.c}">${P.l}</span>${due ? `<span class="due">📅 ${due}</span>` : ''}${t.assignee ? `<span>👤 ${esc(t.assignee)}</span>` : ''}
-      ${link ? `<span>${link}</span>` : ''}${(t.comments || []).length ? `<span>💬 ${t.comments.length}</span>` : ''}</div></div>`;
+      ${link ? `<span>${link}</span>` : ''}${(() => { const c = (t.comments || []).filter((x) => x.type !== 'system').length; return c ? `<span>🗂 ${c}</span>` : ''; })()}</div>
+      ${(() => { const st = subStats(t); if (!st.total) return ''; const late = (t.subtasks || []).some((x) => !x.done && x.dueDate && daysLeft(x.dueDate) < 0);
+        return `<div style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12.5px;color:${late ? 'var(--c-alert)' : 'var(--muted)'}"><span>☑ ${st.done}/${st.total}</span><div class="bar" style="flex:1;min-width:40px"><span style="width:${pct(st.done, st.total)}%"></span></div></div>`; })()}</div>`;
   }
   function viewTasks() {
     const F = S.f;
@@ -1204,10 +1368,17 @@ window.DEMO_SEED = function () {
     const rows = S.tasks.filter((t) => match(t, S.q))
       .filter((t) => F.taskAssignee === 'all' || t.assignee === F.taskAssignee)
       .filter((t) => F.taskPriority === 'all' || t.priority === F.taskPriority)
+      .filter((t) => { if (F.taskLink === 'all') return true; const [ty, ...rest] = F.taskLink.split(':'); const lid = rest.join(':'); return ty === 'tag' ? (t.tags || []).includes(lid) : hasLink(t, ty, lid) || related(ty, lid).tasks.includes(t); })
       .sort((a, b) => ({ urgent: 0, high: 1, normal: 2, low: 3 }[a.priority] ?? 2) - ({ urgent: 0, high: 1, normal: 2, low: 3 }[b.priority] ?? 2) || (a.dueDate || '9999').localeCompare(b.dueDate || '9999'));
     const toolbar = `<div class="toolbar">
       <div class="chips"><span class="chip ${F.taskView === 'kanban' ? 'on' : ''}" data-act="f" data-f="taskView" data-v="kanban">▦ לוח</span><span class="chip ${F.taskView === 'list' ? 'on' : ''}" data-act="f" data-f="taskView" data-v="list">☰ רשימה</span></div>
       <select data-fsel="taskPriority"><option value="all">כל העדיפויות</option>${Object.entries(PRIORITY).map(([k, v]) => `<option value="${k}" ${F.taskPriority === k ? 'selected' : ''}>${v.l}</option>`).join('')}</select>
+      <select data-fsel="taskLink"><option value="all">כל הקישורים</option>
+        ${S.projects.length ? `<optgroup label="פרויקטים">${S.projects.map((x) => `<option value="project:${x.id}" ${F.taskLink === 'project:' + x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</optgroup>` : ''}
+        ${S.people.length ? `<optgroup label="אנשי קשר">${S.people.map((x) => `<option value="person:${x.id}" ${F.taskLink === 'person:' + x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</optgroup>` : ''}
+        ${S.orders.length ? `<optgroup label="הזמנות">${S.orders.map((x) => `<option value="order:${x.id}" ${F.taskLink === 'order:' + x.id ? 'selected' : ''}>${esc(x.orderNumber)}</option>`).join('')}</optgroup>` : ''}
+        ${allTags().length ? `<optgroup label="תגיות">${allTags().map((x) => `<option value="tag:${esc(x)}" ${F.taskLink === 'tag:' + x ? 'selected' : ''}>#${esc(x)}</option>`).join('')}</optgroup>` : ''}
+      </select>
       <select data-fsel="taskAssignee"><option value="all">כל האחראים</option>${assignees.map((a) => `<option ${F.taskAssignee === a ? 'selected' : ''}>${esc(a)}</option>`).join('')}</select>
       <div class="spacer"></div><span style="color:var(--muted);font-size:13.5px">${rows.filter((t) => t.status !== 'done').length} פתוחות</span></div>`;
     let body;
@@ -1232,50 +1403,353 @@ window.DEMO_SEED = function () {
       <div class="field"><label>אחראי/ת</label><input name="assignee" list="assigneeList" value="${esc(t.assignee || 'הרל"שית')}"><datalist id="assigneeList">${[...new Set(users)].map((u) => `<option value="${esc(u)}">`).join('')}</datalist></div>
       ${quick ? '' : `
       <div class="field full"><label>פירוט</label><textarea name="description">${esc(t.description || '')}</textarea></div>
+      ${t.id ? '' : `<div class="field full"><label>תתי‑משימות (שורה לכל אחת, אופציונלי)</label><textarea name="subLines" placeholder="לשלוח טיוטה לקבלן&#10;לקבל הערות&#10;לסגור גרסה סופית"></textarea></div>`}
       <div class="field"><label>סטטוס</label><select name="status">${Object.entries(TSTATUS).map(([k, v]) => `<option value="${k}" ${(t.status || 'new') === k ? 'selected' : ''}>${v.l}</option>`).join('')}</select></div>
       <div class="field"><label>קטגוריה</label><input name="category" list="catList" value="${esc(t.category || '')}"><datalist id="catList">${['הזמנות', 'הסכמים', 'שטח', 'כספים', 'מנהלה', 'ישיבות'].map((c) => `<option value="${c}">`).join('')}</datalist></div>
-      <div class="field"><label>קשור להזמנה</label><select name="linkOrder"><option value="">—</option>${S.orders.map((o) => `<option value="${o.id}" ${t.linkOrder === o.id ? 'selected' : ''}>${esc(o.orderNumber)} · ${esc(o.supplier || '')}</option>`).join('')}</select></div>
-      <div class="field"><label>קשור להסכם</label><select name="linkAgreement"><option value="">—</option>${S.agreements.map((a) => `<option value="${a.id}" ${t.linkAgreement === a.id ? 'selected' : ''}>${esc(a.agreementNumber || '')} · ${esc(a.name || '')}</option>`).join('')}</select></div>`}
+      <div class="field"><label>פרויקט</label><select name="linkProject"><option value="">—</option>${S.projects.map((x) => `<option value="${x.id}" ${(t.links || []).some((l) => l.type === 'project' && l.id === x.id) ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></div>
+      <div class="field"><label>איש קשר</label><select name="linkPerson"><option value="">—</option>${S.people.map((x) => `<option value="${x.id}" ${(t.links || []).some((l) => l.type === 'person' && l.id === x.id) ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></div>
+      <div class="field full"><label>תגיות (מופרדות בפסיק, למשל: חשבון, הגשה)</label><input name="tagsText" value="${esc((t.tags || []).join(', '))}"></div>
+      <div class="field"><label>קשור להזמנה</label><select name="linkOrder"><option value="">—</option>${S.orders.map((o) => `<option value="${o.id}" ${t.linkOrder === o.id || (t.links || []).some((l) => l.type === 'order' && l.id === o.id) ? 'selected' : ''}>${esc(o.orderNumber)} · ${esc(o.supplier || '')}</option>`).join('')}</select></div>
+      <div class="field"><label>קשור להסכם</label><select name="linkAgreement"><option value="">—</option>${S.agreements.map((a) => `<option value="${a.id}" ${t.linkAgreement === a.id || (t.links || []).some((l) => l.type === 'agreement' && l.id === a.id) ? 'selected' : ''}>${esc(a.agreementNumber || '')} · ${esc(a.name || '')}</option>`).join('')}</select></div>`}
     </div></form>`, `<button class="btn orange" data-act="save-task">שמירה</button><button class="btn" data-act="close">ביטול</button>`);
-    S._editing = { col: 'tasks', id: t.id || null, fromNote: t._fromNote || null };
+    S._editing = { col: 'tasks', id: t.id || null, fromNote: t._fromNote || null, presetLinks: t.links || [] };
     setTimeout(() => { const i = $('#taskForm [name=title]'); i && i.focus(); }, 50);
   }
   async function saveTask() {
     const d = readForm($('#taskForm'));
     if (!d.title) return toast('יש לכתוב את המשימה', 'error');
+    {
+      const ed0 = S._editing; const base = ed0.id ? linksOf(byId('tasks', ed0.id)) : (ed0.presetLinks || []).slice();
+      [['project', 'linkProject'], ['person', 'linkPerson'], ['order', 'linkOrder'], ['agreement', 'linkAgreement']].forEach(([ty, f]) => { if (d[f] && !base.some((x) => x.type === ty && x.id === d[f])) base.push({ type: ty, id: d[f] }); delete d[f]; });
+      if (d.tagsText !== undefined) { d.tags = [...new Set(d.tagsText.split(/[,،]/).map((x) => x.trim().replace(/^#/, '')).filter(Boolean))]; delete d.tagsText; }
+      d.links = base; d.linkOrder = ''; d.linkAgreement = '';
+    }
     const ed = S._editing;
     if (ed.id) {
       const prev = byId('tasks', ed.id);
       if (d.status === 'done' && prev.status !== 'done') d.doneAt = new Date().toISOString();
+      delete d.subLines;
       await DB.update('tasks', ed.id, d); DB.log('עדכן/ה משימה', 'task', d.title);
     } else {
-      d.status = d.status || 'new'; d.comments = [];
+      d.status = d.status || 'new'; d.num = nextNum();
+      d.subtasks = (d.subLines || '').split('\n').map((x) => x.trim()).filter(Boolean).map((title) => ({ id: sid(), title, dueDate: '', done: false, status: 'new', priority: 'normal', createdAt: new Date().toISOString(), by: DB.user.name }));
+      d.comments = [logEntry(ed.fromNote ? 'המשימה נוצרה מפיתקית' : 'המשימה נוצרה')];
+      delete d.subLines;
       await DB.add('tasks', d); DB.log('יצר/ה משימה', 'task', d.title);
       if (ed.fromNote) await DB.remove('notes', ed.fromNote);
     }
     closeModal(); toast('המשימה נשמרה', 'ok');
   }
+  const localNow = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
+  const fmtDT = (iso) => (iso ? new Date(iso).toLocaleString('he-IL', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) : '');
+  const SSTATUS = { new: { l: 'לביצוע', c: 'gray' }, progress: { l: 'בטיפול', c: 'warn' }, done: { l: 'בוצע', c: 'ok' } };
+  const subStatus = (x) => x.status || (x.done ? 'done' : 'new');
+  const keyOf = (t) => {
+    if (t.num) return 'T-' + t.num;
+    const sorted = S.tasks.filter((x) => !x.num).sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
+    return 'T-' + (sorted.findIndex((x) => x.id === t.id) + 1);
+  };
+  const nextNum = () => Math.max(S.tasks.length, ...S.tasks.map((t) => t.num || 0)) + 1;
+  const userList = () => [...new Set(['הרל"שית', 'המפקד', DB.user.name, ...S.tasks.map((x) => x.assignee), ...S.tasks.flatMap((x) => (x.subtasks || []).map((y) => y.assignee))].filter(Boolean))];
+  const avatar = (name) => name ? `<span class="av" title="${esc(name)}">${esc(name.replace(/["׳״']/g, '').slice(0, 1))}</span>` : '';
+
+  function subtasksHTML(t) {
+    const list = (t.subtasks || []).slice();
+    const st = subStats(t); const p = pct(st.done, st.total);
+    return `<div class="j-sec"><div class="j-sec-h"><h4>תתי‑משימות</h4><span class="spacer"></span></div>
+      ${st.total ? `<div class="j-prog"><div class="bar"><span style="width:${p}%"></span></div><span>${p}% הושלם</span></div>` : ''}
+      <div class="j-table">
+        ${st.total ? `<div class="j-tr j-th"><div>משימה</div><div>עדיפות</div><div>אחראי/ת</div><div>יעד</div><div>סטטוס</div><div></div></div>` : ''}
+        ${list.map((x, i) => { const d = x.dueDate ? daysLeft(x.dueDate) : null; const ss = subStatus(x); const late = ss !== 'done' && d != null && d < 0;
+          return `<div class="j-tr ${ss === 'done' ? 'done' : ''}">
+          <div class="j-title"><span class="j-key">${keyOf(t)}-${i + 1}</span><span class="j-t" contenteditable="true" data-sedit="${x.id}" data-tid="${t.id}">${esc(x.title)}</span></div>
+          <div><select data-sf="priority" data-sid="${x.id}" data-tid="${t.id}" class="j-sel">${Object.entries(PRIORITY).map(([k, v]) => `<option value="${k}" ${(x.priority || 'normal') === k ? 'selected' : ''}>${v.l}</option>`).join('')}</select></div>
+          <div class="j-ass">${avatar(x.assignee || t.assignee)}<input list="userList" value="${esc(x.assignee || '')}" placeholder="${esc(t.assignee || '—')}" data-sf="assignee" data-sid="${x.id}" data-tid="${t.id}" class="j-in"></div>
+          <div><input type="date" value="${esc(x.dueDate || '')}" data-sf="dueDate" data-sid="${x.id}" data-tid="${t.id}" class="j-in ${late ? 'late' : ''}"></div>
+          <div><select data-sf="status" data-sid="${x.id}" data-tid="${t.id}" class="j-sel j-st ${SSTATUS[ss].c}">${Object.entries(SSTATUS).map(([k, v]) => `<option value="${k}" ${ss === k ? 'selected' : ''}>${v.l}</option>`).join('')}</select></div>
+          <div><button class="btn sm ghost" data-act="sub-del" data-id="${t.id}" data-sid="${x.id}" title="מחק">✕</button></div></div>`; }).join('')}
+        <div class="j-tr j-add"><input id="subTitle" placeholder="+ תת‑משימה חדשה… (Enter)"><input id="subDue" type="date" title="יעד"><button class="btn sm orange" data-act="sub-add" data-id="${t.id}">הוסף</button></div>
+      </div></div>`;
+  }
+  async function updateSubs(tid, fn, logText) {
+    const t = byId('tasks', tid); const subs = (t.subtasks || []).map((x) => ({ ...x }));
+    fn(subs);
+    const patch = { subtasks: subs };
+    if (logText) patch.comments = [...(t.comments || []), logEntry(logText)];
+    await DB.update('tasks', tid, patch);
+  }
+  async function setTaskField(tid, field, value) {
+    const t = byId('tasks', tid); if (!t || (t[field] || '') === value) return;
+    const L = { title: 'כותרת', description: 'תיאור', priority: 'עדיפות', assignee: 'אחראי/ת', dueDate: 'תאריך יעד', startDate: 'תאריך התחלה', category: 'קטגוריה', linkOrder: 'קישור להזמנה', linkAgreement: 'קישור להסכם' };
+    const show = (v) => field === 'priority' ? (PRIORITY[v] || {}).l : field.endsWith('Date') ? dfmt(v) : field === 'linkOrder' ? ((byId('orders', v) || {}).orderNumber || '—') : field === 'linkAgreement' ? ((byId('agreements', v) || {}).agreementNumber || '—') : v;
+    const text = field === 'description' ? 'התיאור עודכן' : `${L[field] || field}: ${show(t[field]) || '—'} ← ${show(value) || '—'}`;
+    await DB.update('tasks', tid, { [field]: value, comments: [...(t.comments || []), logEntry(text)] });
+  }
+
   function openTask(id) {
     const t = byId('tasks', id); if (!t) return;
-    const P = PRIORITY[t.priority] || PRIORITY.normal;
     const o = t.linkOrder && byId('orders', t.linkOrder); const a = t.linkAgreement && byId('agreements', t.linkAgreement);
-    modal(esc(t.title), `
-      <div class="chips" style="margin-bottom:14px">${Object.entries(TSTATUS).map(([k, v]) => `<span class="chip ${(t.status || 'new') === k ? 'on' : ''}" data-act="tstatus" data-id="${id}" data-v="${k}">${v.l}</span>`).join('')}</div>
-      <div class="info-grid">
-        <div class="info"><small>עדיפות</small><b><span class="pill ${P.c}">${P.l}</span></b></div>
-        <div class="info"><small>תאריך יעד</small><b>${dfmt(t.dueDate)}</b></div>
-        <div class="info"><small>אחראי/ת</small><b>${esc(t.assignee || '—')}</b></div>
-        <div class="info"><small>קטגוריה</small><b>${esc(t.category || '—')}</b></div>
-        <div class="info"><small>נוצרה ע"י</small><b>${esc(t.createdBy || '—')}</b></div>
-        <div class="info"><small>קישור</small><b>${o ? `<a href="#" data-act="open" data-kind="order" data-id="${o.id}">📄 ${esc(o.orderNumber)}</a>` : a ? `<a href="#" data-act="open" data-kind="agreement" data-id="${a.id}">📑 ${esc(a.agreementNumber || a.name)}</a>` : '—'}</b></div>
+    const tab = S.actTab || 'all';
+    const all = (t.comments || []).slice().sort((x, y) => (y.at || '').localeCompare(x.at || ''));
+    const shown = all.filter((c) => tab === 'all' || (tab === 'history' ? c.type === 'system' : c.type !== 'system'));
+    const row = (label, ctl) => `<div class="j-row"><div class="j-lbl">${label}</div><div class="j-val">${ctl}</div></div>`;
+    const sel = (field, opts, val) => `<select class="j-sel" data-tf="${field}" data-tid="${id}">${opts.map(([k, l]) => `<option value="${k}" ${val === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`;
+    const dl = t.dueDate ? daysLeft(t.dueDate) : null;
+    const body = `<datalist id="userList">${userList().map((u) => `<option value="${esc(u)}">`).join('')}</datalist>
+    <div class="jira">
+      <div class="j-main">
+        <div class="j-crumb"><span class="j-key big">${keyOf(t)}</span>${linksOf(t).map((x) => ` / <a href="#" data-act="open" data-kind="ent-${x.type}" data-id="${esc(x.id)}">${LINK_T[x.type].i} ${esc(entName(x.type, x.id))}</a>`).join('')}</div>
+        <h2 class="j-h" contenteditable="true" data-tedit="title" data-tid="${id}">${esc(t.title)}</h2>
+        <div class="j-sec"><div class="j-sec-h"><h4>תיאור</h4></div>
+          <div class="j-desc" contenteditable="true" data-tedit="description" data-tid="${id}" data-ph="לחץ כדי להוסיף תיאור…">${esc(t.description || '')}</div></div>
+        ${subtasksHTML(t)}
+        <div class="j-sec"><div class="j-sec-h"><h4>פעילות</h4></div>
+          <div class="j-tabs">${[['all', 'הכל'], ['comments', 'הערות ועדכונים'], ['history', 'היסטוריה']].map(([k, l]) => `<span class="${tab === k ? 'on' : ''}" data-act="acttab" data-v="${k}">${l}</span>`).join('')}</div>
+          <div class="log-add">
+            <div class="chips" id="logType">${Object.entries(LOG_TYPES).filter(([k]) => k !== 'system').map(([k, v], i) => `<span class="chip ${i === 0 ? 'on' : ''}" data-act="logtype" data-v="${k}">${v.i} ${v.l}</span>`).join('')}</div>
+            <textarea id="cmt" placeholder="הוסף הערה או עדכון… למשל: שלחתי לקבלן את התוכניות"></textarea>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><label style="font-size:12.5px;color:var(--muted)">מתי:</label>
+              <input id="cmtAt" type="datetime-local" value="${localNow()}" data-default="${localNow()}"><span style="flex:1"></span><button class="btn orange" data-act="comment" data-id="${id}">שמירה</button></div>
+          </div>
+          <div class="log">${shown.map((c) => { const T = LOG_TYPES[c.type || 'note'] || LOG_TYPES.note;
+            return `<div class="log-item ${c.type === 'system' ? 'sys' : ''}">${c.type === 'system' ? `<div class="log-ic">${T.i}</div>` : avatar(c.by)}<div style="flex:1;min-width:0">
+              <div class="log-h"><b>${esc(c.by || '')}</b>${c.type !== 'system' ? ` <span class="pill gray" style="font-size:11.5px">${T.i} ${esc(T.l)}</span>` : ''}<span>${fmtDT(c.at)}</span></div><div style="white-space:pre-wrap">${esc(c.text)}</div></div></div>`; }).join('') || '<div class="empty" style="padding:10px">אין רישומים</div>'}</div>
+        </div>
       </div>
-      ${t.description ? `<div class="section-t">פירוט</div><div style="white-space:pre-wrap">${esc(t.description)}</div>` : ''}
-      <div class="section-t">💬 עדכונים ותגובות</div>
-      ${(t.comments || []).map((c) => `<div style="background:var(--surface-2);border-radius:12px;padding:10px 12px;margin-bottom:8px"><b>${esc(c.by)}</b> <span style="color:var(--muted);font-size:12px">${new Date(c.at).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' })}</span><div>${esc(c.text)}</div></div>`).join('') || '<div class="empty" style="padding:10px">אין עדכונים</div>'}
-      <div style="display:flex;gap:8px;margin-top:8px"><input id="cmt" placeholder="כתוב עדכון…" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:10px"><button class="btn orange" data-act="comment" data-id="${id}">שלח</button></div>`,
-      `<button class="btn orange" data-act="edit-task" data-id="${id}">✏️ עריכה</button>
-       ${t.status !== 'done' ? `<button class="btn" data-act="tstatus" data-id="${id}" data-v="done">✔ סמן כהושלמה</button>` : ''}
-       <div class="spacer"></div><button class="btn danger" data-act="del" data-col="tasks" data-id="${id}">מחיקה</button>`);
+      <aside class="j-side">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+          <select class="j-status s-${t.status || 'new'}" data-tf="status" data-tid="${id}">${Object.entries(TSTATUS).map(([k, v]) => `<option value="${k}" ${(t.status || 'new') === k ? 'selected' : ''}>${v.l}</option>`).join('')}</select>
+          ${t.status !== 'done' ? `<button class="btn sm" data-act="tstatus" data-id="${id}" data-v="done">✔ סיום</button>` : ''}</div>
+        <div class="j-card"><div class="j-card-h">פרטים</div>
+          ${row('אחראי/ת', `<div class="j-ass">${avatar(t.assignee)}<input class="j-in" list="userList" value="${esc(t.assignee || '')}" data-tf="assignee" data-tid="${id}" placeholder="—"></div>`)}
+          ${row('עדיפות', sel('priority', Object.entries(PRIORITY).map(([k, v]) => [k, v.l]), t.priority || 'normal'))}
+          ${row('תאריך התחלה', `<input type="date" class="j-in" value="${esc(t.startDate || '')}" data-tf="startDate" data-tid="${id}">`)}
+          ${row('תאריך יעד', `<input type="date" class="j-in ${t.status !== 'done' && dl != null && dl < 0 ? 'late' : ''}" value="${esc(t.dueDate || '')}" data-tf="dueDate" data-tid="${id}">`)}
+          ${row('קטגוריה', `<input class="j-in" list="catList" value="${esc(t.category || '')}" data-tf="category" data-tid="${id}" placeholder="—"><datalist id="catList">${['הזמנות', 'הסכמים', 'שטח', 'כספים', 'מנהלה', 'ישיבות'].map((c) => `<option value="${c}">`).join('')}</datalist>`)}
+          <div class="j-row" style="align-items:start;padding:6px 0"><div class="j-lbl" style="padding-top:4px">קישורים</div><div class="j-val"><div class="chips">${linksOf(t).map((x) => linkChip(x, id)).join('')}<button class="btn sm" data-act="link-picker" data-id="${id}">+ קישור</button></div>
+            ${(() => { const sg = linkSuggestions(t); return sg.length ? `<div class="j-sug">💡 ${sg.slice(0, 3).map((x) => `<span data-act="pick-link" data-id="${id}" data-type="${x.type}" data-lid="${esc(x.id)}">+ ${LINK_T[x.type].i} ${esc(entName(x.type, x.id))}</span>`).join('')}</div>` : ''; })()}</div></div>
+          <div class="j-row" style="align-items:start;padding:6px 0"><div class="j-lbl" style="padding-top:4px">תגיות</div><div class="j-val"><div class="chips">${(t.tags || []).map((g) => tagChip(g, id)).join('')}
+            <input class="j-in" style="width:110px" list="tagList" placeholder="+ תגית" data-tag-add="${id}"></div><datalist id="tagList">${allTags().map((g) => `<option value="${esc(g)}">`).join('')}</datalist></div></div>
+          ${row('נוצרה ע"י', `<div class="j-ass">${avatar(t.createdBy)}<span>${esc(t.createdBy || '—')}</span></div>`)}
+        </div>
+        <div class="j-meta">נוצרה ${fmtDT(t.createdAt)}<br>עודכנה ${fmtDT(t.updatedAt)}</div>
+      </aside>
+    </div>`;
+    modal(`<span class="j-key">${keyOf(t)}</span> משימה`, body,
+      `<div class="spacer"></div><button class="btn danger" data-act="del" data-col="tasks" data-id="${id}">מחיקת משימה</button>`, 'wide jira-modal');
+  }
+
+  /* ==========================================================
+     קישורים, פרויקטים, אנשי קשר ותיק 360°
+     ========================================================== */
+  const LINK_T = {
+    project: { l: 'פרויקט', i: '🏗️', col: 'projects' },
+    person: { l: 'איש קשר', i: '👤', col: 'people' },
+    order: { l: 'הזמנה', i: '📄', col: 'orders' },
+    agreement: { l: 'הסכם', i: '📑', col: 'agreements' },
+  };
+  const PERSON_TYPES = ['עובד אטלס', 'יועץ / נותן שירות', 'קבלן', 'ספק', 'גורם במשהב"ט', 'גורם ביחידה', 'אחר'];
+  const PROJECT_STATUS = { active: { l: 'פעיל', c: 'ok' }, hold: { l: 'מוקפא', c: 'warn' }, done: { l: 'הסתיים', c: 'gray' } };
+  const norm = (s) => String(s || '').replace(/["׳״'\s.-]/g, '').toLowerCase();
+  const entRec = (type, id) => (LINK_T[type] ? byId(LINK_T[type].col, id) : null);
+  function entName(type, id) {
+    if (type === 'tag') return '#' + id;
+    const r = entRec(type, id); if (!r) return '(נמחק)';
+    if (type === 'order') return 'הזמנה ' + r.orderNumber;
+    if (type === 'agreement') return r.name || 'הסכם ' + r.agreementNumber;
+    return r.name || '—';
+  }
+  function linksOf(t) {
+    const l = (t.links || []).slice();
+    if (t.linkOrder && !l.some((x) => x.type === 'order' && x.id === t.linkOrder)) l.push({ type: 'order', id: t.linkOrder });
+    if (t.linkAgreement && !l.some((x) => x.type === 'agreement' && x.id === t.linkAgreement)) l.push({ type: 'agreement', id: t.linkAgreement });
+    return l.filter((x) => LINK_T[x.type] && entRec(x.type, x.id));
+  }
+  const hasLink = (t, type, id) => linksOf(t).some((x) => x.type === type && x.id === id);
+  const consultantMatch = (o, p) => !!(o && p && p.name && (o.consultants || []).some((c) => norm(c.name) === norm(p.name)));
+  function linkChip(x, tid) {
+    const T = LINK_T[x.type] || { i: '#' };
+    return `<span class="lchip lc-${x.type}" data-act="open" data-kind="ent-${x.type}" data-id="${esc(x.id)}">${T.i} ${esc(entName(x.type, x.id))}${tid ? `<b data-act="unlink" data-id="${tid}" data-type="${x.type}" data-lid="${esc(x.id)}" title="הסר קישור">×</b>` : ''}</span>`;
+  }
+  const tagChip = (tag, tid) => `<span class="lchip lc-tag" data-act="open" data-kind="ent-tag" data-id="${esc(tag)}">#${esc(tag)}${tid ? `<b data-act="untag" data-id="${tid}" data-tag="${esc(tag)}" title="הסר">×</b>` : ''}</span>`;
+  const allTags = () => [...new Set(S.tasks.flatMap((t) => t.tags || []))].sort((a, b) => a.localeCompare(b, 'he'));
+
+  /** כל מה שקשור לישות: ישיר + דרך משימות + דרך הזמנות */
+  function related(type, id) {
+    const tasks = type === 'tag' ? S.tasks.filter((t) => (t.tags || []).includes(id)) : S.tasks.filter((t) => hasLink(t, type, id));
+    const set = { project: new Set(), person: new Set(), order: new Set(), agreement: new Set() };
+    tasks.forEach((t) => linksOf(t).forEach((x) => set[x.type].add(x.id)));
+    if (type === 'project') {
+      S.orders.filter((o) => o.projectId === id).forEach((o) => set.order.add(o.id));
+      S.agreements.filter((a) => a.projectId === id).forEach((a) => set.agreement.add(a.id));
+      S.people.filter((p) => p.projectId === id).forEach((p) => set.person.add(p.id));
+    }
+    if (type === 'person') {
+      const p = byId('people', id);
+      S.orders.filter((o) => consultantMatch(o, p)).forEach((o) => set.order.add(o.id));
+      if (p && p.projectId) set.project.add(p.projectId);
+    }
+    if (type === 'order') { const o = byId('orders', id); if (o && o.projectId) set.project.add(o.projectId); S.people.filter((p) => consultantMatch(o, p)).forEach((p) => set.person.add(p.id)); }
+    if (type === 'agreement') { const a = byId('agreements', id); if (a && a.projectId) set.project.add(a.projectId); }
+    [...set.order].forEach((oid) => { const o = byId('orders', oid); if (!o) return; if (o.projectId) set.project.add(o.projectId); if (type !== 'person') S.people.forEach((p) => { if (consultantMatch(o, p)) set.person.add(p.id); }); });
+    [...set.agreement].forEach((aid) => { const a = byId('agreements', aid); if (a && a.projectId) set.project.add(a.projectId); });
+    if (type !== 'tag' && set[type]) set[type].delete(id);
+    const pick = (t, col) => [...set[t]].map((i) => byId(col, i)).filter(Boolean);
+    return { tasks, projects: pick('project', 'projects'), people: pick('person', 'people'), orders: pick('order', 'orders'), agreements: pick('agreement', 'agreements') };
+  }
+
+  /* --- הצעות קישור חכמות למשימה --- */
+  function linkSuggestions(t) {
+    const out = []; const cur = linksOf(t); const has = (ty, i) => cur.some((x) => x.type === ty && x.id === i);
+    cur.forEach((x) => {
+      const r = related(x.type, x.id);
+      if (x.type === 'person' || x.type === 'project') r.orders.filter(isActiveOrder).forEach((o) => !has('order', o.id) && out.push({ type: 'order', id: o.id }));
+      if (x.type === 'order' || x.type === 'person' || x.type === 'agreement') r.projects.forEach((p) => !has('project', p.id) && out.push({ type: 'project', id: p.id }));
+      if (x.type === 'order') r.people.forEach((p) => !has('person', p.id) && out.push({ type: 'person', id: p.id }));
+    });
+    // זיהוי שם של איש קשר / פרויקט בכותרת המשימה
+    const text = norm((t.title || '') + ' ' + (t.description || ''));
+    S.people.forEach((p) => { if (p.name && norm(p.name).length > 2 && text.includes(norm(p.name)) && !has('person', p.id)) out.push({ type: 'person', id: p.id }); });
+    S.projects.forEach((p) => { const k = [p.name, p.code].filter(Boolean).map(norm).filter((x) => x.length > 2); if (k.some((x) => text.includes(x)) && !has('project', p.id)) out.push({ type: 'project', id: p.id }); });
+    const seen = new Set(); return out.filter((x) => { const k = x.type + x.id; if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 6);
+  }
+  async function addLink(tid, type, lid) {
+    const t = byId('tasks', tid); if (!t || hasLink(t, type, lid)) return;
+    const links = [...linksOf(t), { type, id: lid }];
+    await DB.update('tasks', tid, { links, linkOrder: '', linkAgreement: '', comments: [...(t.comments || []), logEntry(`קושר ל${LINK_T[type].l}: ${entName(type, lid)}`)] });
+  }
+  async function removeLink(tid, type, lid) {
+    const t = byId('tasks', tid); const links = linksOf(t).filter((x) => !(x.type === type && x.id === lid));
+    await DB.update('tasks', tid, { links, linkOrder: '', linkAgreement: '', comments: [...(t.comments || []), logEntry(`הוסר קישור ל${LINK_T[type].l}: ${entName(type, lid)}`)] });
+  }
+
+  /* --- בוחר קישורים --- */
+  function openLinkPicker(tid, tab) {
+    const t = byId('tasks', tid); tab = tab || S._pickTab || 'project'; S._pickTab = tab;
+    const items = (tab === 'project' ? S.projects.map((p) => [p.id, p.name, p.code || ''])
+      : tab === 'person' ? S.people.map((p) => [p.id, p.name, [p.type, p.company].filter(Boolean).join(' · ')])
+        : tab === 'order' ? S.orders.map((o) => [o.id, 'הזמנה ' + o.orderNumber, [o.supplier, o.description].filter(Boolean).join(' · ')])
+          : S.agreements.map((a) => [a.id, a.name || a.agreementNumber, [a.agreementNumber, a.contractor].filter(Boolean).join(' · ')]))
+      .sort((a, b) => String(a[1]).localeCompare(String(b[1]), 'he'));
+    const sug = linkSuggestions(t);
+    modal(`קישור משימה: ${esc(t.title)}`, `
+      ${sug.length ? `<div class="banner" style="background:var(--c-report-soft);color:inherit"><b>💡 הצעות לפי מה שכבר מקושר:</b><div class="chips" style="margin-top:8px">${sug.map((x) => `<span class="chip" data-act="pick-link" data-id="${tid}" data-type="${x.type}" data-lid="${esc(x.id)}">+ ${LINK_T[x.type].i} ${esc(entName(x.type, x.id))}</span>`).join('')}</div></div>` : ''}
+      <div class="j-tabs">${Object.entries(LINK_T).map(([k, v]) => `<span class="${tab === k ? 'on' : ''}" data-act="pick-tab" data-id="${tid}" data-v="${k}">${v.i} ${v.l}</span>`).join('')}</div>
+      <input id="pickQ" placeholder="חיפוש…" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:10px" autocomplete="off">
+      <div class="pick-list" id="pickList">${items.map(([i, n, s2]) => { const on = hasLink(t, tab, i);
+        return `<div class="pick-row ${on ? 'on' : ''}" data-act="${on ? 'unlink' : 'pick-link'}" data-id="${tid}" data-type="${tab}" data-lid="${esc(i)}" data-s="${esc(norm(n + ' ' + s2))}">
+          <span>${LINK_T[tab].i}</span><div style="flex:1;min-width:0"><b>${esc(n)}</b><div class="sub">${esc(s2)}</div></div><span>${on ? '✔ מקושר' : '+'}</span></div>`; }).join('') || '<div class="empty" style="padding:14px">אין עדיין רשומות</div>'}</div>
+      ${tab === 'project' || tab === 'person' ? `<div style="display:flex;gap:8px;margin-top:12px"><input id="pickNew" placeholder="${tab === 'project' ? 'שם פרויקט חדש' : 'שם איש קשר חדש'}" style="flex:1;padding:10px 12px;border:1px dashed var(--border);border-radius:10px">
+        <button class="btn violet" data-act="pick-new" data-id="${tid}" data-type="${tab}">+ צור וקשר</button></div>` : ''}`,
+      `<button class="btn primary" data-act="open" data-kind="task" data-id="${tid}">סיום — חזרה למשימה</button>`);
+    S._openDetail = ['picker', tid];
+    const q = $('#pickQ'); q.focus();
+    q.oninput = () => { const v = norm(q.value); $$('#pickList .pick-row').forEach((r) => { r.hidden = v && !r.dataset.s.includes(v); }); };
+  }
+
+  /* --- עמוד פרויקטים --- */
+  function viewProjects() {
+    const list = S.projects.filter((p) => match(p, S.q)).sort((a, b) => (a.status === 'done') - (b.status === 'done') || (a.name || '').localeCompare(b.name || '', 'he'));
+    const content = `<div class="ent-grid">${list.map((p) => { const r = related('project', p.id); const open = r.tasks.filter((t) => t.status !== 'done'); const late = open.filter((t) => t.dueDate && daysLeft(t.dueDate) < 0);
+      const ps = PROJECT_STATUS[p.status || 'active'];
+      return `<div class="ent-card" data-act="open" data-kind="ent-project" data-id="${p.id}" style="--ec:var(--c-report)">
+        <div class="row"><span class="ent-ic">🏗️</span><div style="flex:1;min-width:0"><b>${esc(p.name)}</b><div class="sub">${esc([p.code, p.manager].filter(Boolean).join(' · '))}</div></div><span class="pill ${ps.c}">${ps.l}</span></div>
+        <div class="ent-stats"><span><b>${open.length}</b> משימות פתוחות${late.length ? ` · <em>${late.length} באיחור</em>` : ''}</span><span><b>${r.orders.length}</b> הזמנות</span><span><b>${r.people.length}</b> אנשים</span></div></div>`; }).join('') || '<div class="empty">עדיין אין פרויקטים. לחץ "+ פרויקט חדש".</div>'}</div>`;
+    return shell(content, 'פרויקטים', 'כל פרויקט מרכז משימות, הזמנות, הסכמים ואנשים', `<button class="btn violet" data-act="new-project">+ פרויקט חדש</button>`);
+  }
+  function openProjectEditor(p = {}) {
+    modal(p.id ? 'עריכת פרויקט' : 'פרויקט חדש', `<form id="projForm"><div class="form-grid">
+      <div class="field full"><label>שם הפרויקט</label><input name="name" value="${esc(p.name || '')}" autofocus></div>
+      <div class="field"><label>קוד / מספר</label><input name="code" value="${esc(p.code || '')}"></div>
+      <div class="field"><label>סטטוס</label><select name="status">${Object.entries(PROJECT_STATUS).map(([k, v]) => `<option value="${k}" ${(p.status || 'active') === k ? 'selected' : ''}>${v.l}</option>`).join('')}</select></div>
+      <div class="field"><label>מנהל פרויקט</label><input name="manager" list="peopleNames" value="${esc(p.manager || '')}"></div>
+      <div class="field"><label>מזמין / לקוח</label><input name="client" value="${esc(p.client || '')}"></div>
+      <div class="field full"><label>תיאור</label><textarea name="description">${esc(p.description || '')}</textarea></div></div>
+      <datalist id="peopleNames">${S.people.map((x) => `<option value="${esc(x.name)}">`).join('')}</datalist></form>`,
+      `<button class="btn violet" data-act="save-project" data-id="${p.id || ''}">שמירה</button><button class="btn" data-act="close">ביטול</button>`);
+  }
+
+  /* --- עמוד אנשי קשר --- */
+  function viewPeople() {
+    const list = S.people.filter((p) => match(p, S.q)).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
+    const groups = PERSON_TYPES.map((ty) => [ty, list.filter((p) => (p.type || 'אחר') === ty)]).filter(([, l]) => l.length);
+    const unmatched = [...new Set(S.orders.flatMap((o) => (o.consultants || []).map((c) => c.name)).filter(Boolean))].filter((n) => !S.people.some((p) => norm(p.name) === norm(n)));
+    const content = `${unmatched.length ? `<div class="banner" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">💡 נמצאו ${unmatched.length} יועצים בהזמנות שעוד לא רשומים כאנשי קשר: <b>${unmatched.slice(0, 4).map(esc).join(', ')}${unmatched.length > 4 ? '…' : ''}</b><span style="flex:1"></span><button class="btn sm teal" data-act="import-consultants">הוסף אותם</button></div>` : ''}
+      ${groups.map(([ty, l]) => `<div class="section-t" style="margin-top:6px">${esc(ty)} <span class="pill gray">${l.length}</span></div>
+      <div class="ent-grid">${l.map((p) => { const r = related('person', p.id); const open = r.tasks.filter((t) => t.status !== 'done');
+        return `<div class="ent-card" data-act="open" data-kind="ent-person" data-id="${p.id}" style="--ec:var(--c-agree)">
+          <div class="row">${avatar(p.name)}<div style="flex:1;min-width:0"><b>${esc(p.name)}</b><div class="sub">${esc([p.role, p.company].filter(Boolean).join(' · '))}</div></div></div>
+          <div class="ent-stats"><span><b>${open.length}</b> משימות</span><span><b>${r.orders.length}</b> הזמנות</span><span><b>${r.projects.length}</b> פרויקטים</span></div>
+          ${p.phone ? `<div class="sub" style="margin-top:6px">📞 ${esc(p.phone)}</div>` : ''}</div>`; }).join('')}</div>`).join('') || '<div class="empty">עדיין אין אנשי קשר. לחץ "+ איש קשר".</div>'}`;
+    return shell(content, 'אנשי קשר', 'עובדים, יועצים, קבלנים וגורמים — וכל מה שקשור לכל אחד', `<button class="btn teal" data-act="new-person">+ איש קשר</button>`);
+  }
+  function openPersonEditor(p = {}) {
+    modal(p.id ? 'עריכת איש קשר' : 'איש קשר חדש', `<form id="personForm"><div class="form-grid">
+      <div class="field"><label>שם מלא</label><input name="name" value="${esc(p.name || '')}" autofocus></div>
+      <div class="field"><label>סוג</label><select name="type">${PERSON_TYPES.map((x) => `<option ${(p.type || 'אחר') === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
+      <div class="field"><label>תפקיד</label><input name="role" value="${esc(p.role || '')}"></div>
+      <div class="field"><label>חברה / יחידה</label><input name="company" value="${esc(p.company || '')}"></div>
+      <div class="field"><label>טלפון</label><input name="phone" type="tel" value="${esc(p.phone || '')}"></div>
+      <div class="field"><label>אימייל</label><input name="email" type="email" value="${esc(p.email || '')}"></div>
+      <div class="field full"><label>פרויקט עיקרי (אופציונלי)</label><select name="projectId"><option value="">—</option>${S.projects.map((x) => `<option value="${x.id}" ${p.projectId === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></div>
+      <div class="field full"><label>הערות</label><textarea name="notes">${esc(p.notes || '')}</textarea></div></div></form>`,
+      `<button class="btn teal" data-act="save-person" data-id="${p.id || ''}">שמירה</button><button class="btn" data-act="close">ביטול</button>`);
+  }
+
+  /* --- תיק 360° --- */
+  function openEntity(type, id) {
+    let rec = type === 'tag' ? { name: '#' + id } : entRec(type, id);
+    if (!rec) return toast('הרשומה לא נמצאה', 'error');
+    const r = related(type, id);
+    const T = LINK_T[type] || { i: '#', l: 'תגית' };
+    const open = r.tasks.filter((t) => t.status !== 'done'); const done = r.tasks.filter((t) => t.status === 'done');
+    const late = open.filter((t) => t.dueDate && daysLeft(t.dueDate) < 0);
+    const subOpen = open.reduce((s, t) => s + (t.subtasks || []).filter((x) => subStatus(x) !== 'done').length, 0);
+    const ordersAll = type === 'order' ? [rec, ...r.orders] : r.orders;
+    const budget = ordersAll.reduce((s, o) => s + (o.budgetExVat || 0), 0);
+    const used = ordersAll.reduce((s, o) => s + (o.utilized || 0), 0);
+    let sub = '';
+    if (type === 'person') sub = [rec.type, rec.role, rec.company].filter(Boolean).map(esc).join(' · ') + (rec.phone || rec.email ? `<div class="ent-contact">${rec.phone ? `📞 <a href="tel:${esc(rec.phone)}">${esc(rec.phone)}</a>` : ''} ${rec.email ? `✉️ <a href="mailto:${esc(rec.email)}">${esc(rec.email)}</a>` : ''}</div>` : '');
+    if (type === 'project') sub = [rec.code, rec.client, rec.manager && 'מנהל: ' + rec.manager].filter(Boolean).map(esc).join(' · ') + ` <span class="pill ${PROJECT_STATUS[rec.status || 'active'].c}">${PROJECT_STATUS[rec.status || 'active'].l}</span>`;
+    if (type === 'order') sub = `${esc(rec.supplier || '')} · ${esc(rec.description || '')} · <span class="pill ${orderStatus(rec).c}">${orderStatus(rec).l}</span>`;
+    if (type === 'agreement') sub = `${esc(rec.agreementNumber || '')} · ${esc(rec.contractor || '')} · <span class="pill ${agreeStatus(rec).c}">${agreeStatus(rec).l}</span>`;
+    if (type === 'tag') sub = 'כל המשימות שמסומנות בתגית הזו';
+    // יומן משולב
+    const feed = [];
+    r.tasks.forEach((t) => (t.comments || []).filter((c) => c.type !== 'system').forEach((c) => feed.push({ at: c.at, by: c.by, text: c.text, type: c.type, src: `${keyOf(t)} ${t.title}`, kind: 'task', id: t.id })));
+    ordersAll.forEach((o) => (o.history || []).forEach((h) => feed.push({ at: h.date, by: h.by || '', text: ({ create: 'נוצרה', increase: 'הגדלה ' + money(h.amount), decrease: 'הפחתה ' + money(h.amount), extend: 'הארכה עד ' + dfmt(h.newEnd), version: 'גרסה ' + (h.version || ''), link: 'קישור להמשך', note: '' })[h.type] + (h.note ? ' — ' + h.note : ''), type: 'order', src: 'הזמנה ' + o.orderNumber, kind: 'order', id: o.id })));
+    feed.sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
+    const sec = (title, n, html, act = '') => `<div class="ent-sec"><div class="ent-sec-h"><h4>${title}</h4><span class="pill gray">${n}</span><span style="flex:1"></span>${act}</div>${html}</div>`;
+    const presetLinks = type === 'tag' ? [] : [{ type, id }];
+    const body = `
+      <div class="ent-head"><span class="ent-ic big">${type === 'person' ? avatar(rec.name) : T.i}</span><div style="flex:1;min-width:0"><h2>${esc(type === 'tag' ? '#' + id : entName(type, id))}</h2><div class="sub">${sub}</div></div></div>
+      <div class="ent-kpis">
+        <div><b>${open.length}</b><span>משימות פתוחות</span></div>
+        <div class="${late.length ? 'bad' : ''}"><b>${late.length}</b><span>באיחור</span></div>
+        <div><b>${subOpen}</b><span>תתי‑משימות פתוחות</span></div>
+        <div><b>${ordersAll.length}</b><span>הזמנות</span></div>
+        ${budget ? `<div><b>${pct(used, budget)}%</b><span>ניצול ${money(budget)}</span></div>` : `<div><b>${r.agreements.length}</b><span>הסכמים</span></div>`}
+      </div>
+      ${type !== 'project' && r.projects.length ? `<div class="chips" style="margin-bottom:12px">${r.projects.map((p) => linkChip({ type: 'project', id: p.id })).join('')}</div>` : ''}
+      <div class="ent-cols"><div style="min-width:0">
+        ${sec('✅ משימות', open.length, open.map(taskCard).join('') || '<div class="empty" style="padding:12px">אין משימות פתוחות</div>', `<button class="btn sm orange" data-act="task-links" data-links='${esc(JSON.stringify(presetLinks))}' data-tag="${type === 'tag' ? esc(id) : ''}">+ משימה</button>`)}
+        ${done.length ? `<details class="ent-done"><summary>הושלמו (${done.length})</summary>${done.map(taskCard).join('')}</details>` : ''}
+        ${sec('🗂 יומן משולב', feed.length, `<div class="log">${feed.slice(0, 30).map((f) => `<div class="log-item" data-act="open" data-kind="${f.kind}" data-id="${f.id}" style="cursor:pointer">
+          <div class="log-ic">${f.kind === 'order' ? '📄' : (LOG_TYPES[f.type] || LOG_TYPES.note).i}</div><div style="flex:1;min-width:0"><div class="log-h"><b>${esc(f.src)}</b>${f.by ? ' · ' + esc(f.by) : ''}<span>${String(f.at || '').length > 10 ? fmtDT(f.at) : dfmt(f.at)}</span></div><div>${esc(f.text)}</div></div></div>`).join('') || '<div class="empty" style="padding:12px">אין רישומים</div>'}</div>`)}
+      </div><div style="min-width:0">
+        ${type !== 'order' ? sec('📄 הזמנות', r.orders.length, r.orders.map((o) => { const p = pct(o.utilized || 0, o.budgetExVat); const s = orderStatus(o);
+          return `<div class="ent-row" data-act="open" data-kind="order" data-id="${o.id}"><div style="flex:1;min-width:0"><b>${esc(o.orderNumber)}</b> <span class="sub">${esc(o.supplier || '')}</span>${bar(p)}</div><span class="pill ${s.c}">${s.l}</span></div>`; }).join('') || '<div class="empty" style="padding:10px">—</div>') : ''}
+        ${type !== 'agreement' && (r.agreements.length || type === 'project') ? sec('📑 הסכמים', r.agreements.length, r.agreements.map((a) => `<div class="ent-row" data-act="open" data-kind="agreement" data-id="${a.id}"><div style="flex:1;min-width:0"><b>${esc(a.name || a.agreementNumber)}</b>${bar(pct(a.utilized || 0, a.targetValue))}</div><span class="pill ${agreeStatus(a).c}">${agreeStatus(a).l}</span></div>`).join('') || '<div class="empty" style="padding:10px">—</div>') : ''}
+        ${type !== 'person' ? sec('👤 אנשים', r.people.length, `<div class="chips">${r.people.map((p) => linkChip({ type: 'person', id: p.id })).join('') || '<span class="sub">—</span>'}</div>`) : ''}
+        ${type === 'project' ? '' : ''}
+        ${rec.notes || rec.description ? sec('📝 הערות', '', `<div style="white-space:pre-wrap">${esc(rec.notes || rec.description)}</div>`) : ''}
+      </div></div>`;
+    const editBtn = type === 'project' ? `<button class="btn violet" data-act="edit-project" data-id="${id}">✏️ עריכה</button>`
+      : type === 'person' ? `<button class="btn teal" data-act="edit-person" data-id="${id}">✏️ עריכה</button>`
+        : type === 'order' || type === 'agreement' ? `<button class="btn" data-act="open" data-kind="${type}" data-id="${id}">פרטי ה${T.l}</button>` : '';
+    modal(`🗂 תיק ${T.l}`, body, `${editBtn}<button class="btn" data-act="ent-report" data-type="${type}" data-id="${esc(id)}">⬇ דוח לתיק</button>
+      <div class="spacer"></div>${type === 'project' || type === 'person' ? `<button class="btn danger" data-act="del" data-col="${LINK_T[type].col}" data-id="${id}">מחיקה</button>` : ''}`, 'wide ent-modal');
+    S._openDetail = ['ent-' + type, id];
   }
 
   /* ---------------- פיתקיות ---------------- */
@@ -1286,10 +1760,21 @@ window.DEMO_SEED = function () {
         <div class="txt" contenteditable="true" data-note="${x.id}">${esc(x.text)}</div>
         <div class="foot"><div class="color-dots">${NOTE_COLORS.map((c) => `<i class="s-${c}" data-act="note-color" data-id="${x.id}" data-c="${c}"></i>`).join('')}</div><div class="spacer"></div>
           <button data-act="note-pin" data-id="${x.id}" title="הצמד לדשבורד">${x.pinned ? '📌' : '📍'}</button>
-          <button data-act="note-task" data-id="${x.id}" title="הפוך למשימה">→ משימה</button>
+          <button data-act="note-task" data-id="${x.id}" title="הפוך למשימה חדשה">→ משימה</button>
+          <button data-act="note-sub" data-id="${x.id}" title="הוסף כתת‑משימה למשימה קיימת">→ תת‑משימה</button>
           <button data-act="note-del" data-id="${x.id}" title="מחק">🗑</button></div>
         <div style="font-size:11px;opacity:.6;margin-top:4px">${esc(x.createdBy || '')} · ${dfmt((x.createdAt || '').slice(0, 10))}</div></div>`).join('') || '<div class="empty">אין פיתקיות. כתוב משהו למעלה ✍️</div>'}</div>`;
     return shell(content, 'לוח פיתקיות', 'כתיבה מהירה — ובהמשך "→ משימה" מעביר לטבלת השליטה');
+  }
+  function openNoteToSub(nid) {
+    const x = byId('notes', nid);
+    const open = S.tasks.filter((t) => t.status !== 'done').sort((a, b) => (a.title || '').localeCompare(b.title || '', 'he'));
+    if (!open.length) return toast('אין משימות פתוחות — צור קודם משימה ראשית', 'error');
+    modal('הוספת פיתקית כתת‑משימה', `<div class="banner" style="background:var(--c-notes-soft);color:inherit;white-space:pre-wrap">${esc(x.text)}</div>
+      <div class="form-grid"><div class="field full"><label>למשימה הראשית</label><select id="nsTask"><option value="">— בחר משימה —</option>
+        ${open.map((t) => `<option value="${t.id}">${esc(t.title)}${t.assignee ? ' · ' + esc(t.assignee) : ''}</option>`).join('')}</select></div>
+      <div class="field"><label>תאריך יעד (אופציונלי)</label><input id="nsDue" type="date"></div></div>`,
+      `<button class="btn pink" data-act="do-note-sub" data-id="${nid}">הוסף כתת‑משימה</button><button class="btn" data-act="close">ביטול</button>`);
   }
   async function addNote(text) {
     text = (text || '').trim(); if (!text) return;
@@ -1302,35 +1787,39 @@ window.DEMO_SEED = function () {
       ['budgetExVat', 'תקציב בהזמנה'], ['budgetTotal', 'כולל מע"מ'], ['utilized', 'נוצל'], ['utilPct', '% ניצול'], ['startDate', 'תחילה'], ['endDate', 'סיום'], ['daysLeft', 'ימים לסיום'], ['status', 'סטטוס']],
     agreements: [['agreementNumber', 'מספר הסכם'], ['demandNumber', 'מספר דרישה'], ['name', 'שם ההסכם'], ['contractor', 'קבלן'], ['kind', 'סוג'], ['targetValue', 'ערך יעד'],
       ['utilized', 'נוצל'], ['utilPct', '% ניצול'], ['startDate', 'תחילה'], ['endDate', 'סיום'], ['daysLeft', 'ימים לסיום'], ['status', 'סטטוס']],
-    tasks: [['title', 'משימה'], ['priority', 'עדיפות'], ['status', 'סטטוס'], ['assignee', 'אחראי/ת'], ['dueDate', 'תאריך יעד'], ['category', 'קטגוריה'], ['link', 'קישור'], ['createdBy', 'נוצרה ע"י'], ['description', 'פירוט']],
+    tasks: [['title', 'משימה'], ['priority', 'עדיפות'], ['status', 'סטטוס'], ['assignee', 'אחראי/ת'], ['dueDate', 'תאריך יעד'], ['category', 'קטגוריה'], ['link', 'קישורים'], ['tagsTxt', 'תגיות'], ['subs', 'תתי‑משימות'], ['lastLog', 'עדכון אחרון'], ['createdBy', 'נוצרה ע"י'], ['description', 'פירוט']],
   };
   const DEFAULT_COLS = { orders: ['orderNumber', 'demandNumber', 'supplier', 'demandBudget', 'budgetExVat', 'utilPct', 'startDate', 'endDate', 'status'],
     agreements: ['agreementNumber', 'demandNumber', 'name', 'contractor', 'targetValue', 'utilPct', 'startDate', 'endDate', 'status'],
-    tasks: ['title', 'priority', 'status', 'assignee', 'dueDate', 'link'] };
+    tasks: ['title', 'priority', 'status', 'assignee', 'dueDate', 'subs', 'lastLog'] };
   const SEC_NAME = { orders: 'הזמנות עבודה', agreements: 'הסכמים וחוזים', tasks: 'משימות' };
   const SEC_COLOR = { orders: '#2563eb', agreements: '#0d9488', tasks: '#ea7a0c' };
   function defaultReport() {
-    return { title: 'דוח מצב', sections: ['orders', 'agreements', 'tasks'], cols: JSON.parse(JSON.stringify(DEFAULT_COLS)), status: 'active', from: '', to: '', text: '', taskStatus: 'open', priority: 'all' };
+    return { link: '', title: 'דוח מצב', sections: ['orders', 'agreements', 'tasks'], cols: JSON.parse(JSON.stringify(DEFAULT_COLS)), status: 'active', from: '', to: '', text: '', taskStatus: 'open', priority: 'all' };
   }
   S.report = defaultReport();
 
   function reportData(R) {
     const inRange = (d) => (!R.from || (d && d >= R.from)) && (!R.to || (d && d <= R.to));
     const out = {};
-    if (R.sections.includes('orders')) out.orders = S.orders.filter((o) => match(o, R.text) && inRange(o.endDate)).filter((o) => { const k = orderStatus(o).k;
+    let rel = null; if (R.link) { const [ty, ...rest] = R.link.split(':'); const lid = rest.join(':'); rel = related(ty, lid);
+      if (ty === 'order') rel.orders.push(byId('orders', lid)); if (ty === 'agreement') rel.agreements.push(byId('agreements', lid)); }
+    const inRel = (col, x) => !rel || rel[col].includes(x);
+    if (R.sections.includes('orders')) out.orders = S.orders.filter((o) => inRel('orders', o) && match(o, R.text) && inRange(o.endDate)).filter((o) => { const k = orderStatus(o).k;
       return R.status === 'all' || (R.status === 'active' && ['active', 'soon', 'ending'].includes(k)) || (R.status === 'ending' && ['soon', 'ending'].includes(k)) || (R.status === 'closed' && ['ended', 'linked', 'cancelled'].includes(k)); })
       .sort((a, b) => (a.endDate || '').localeCompare(b.endDate || ''))
       .map((o) => ({ ...o, utilPct: pct(o.utilized || 0, o.budgetExVat), daysLeft: daysLeft(o.endDate), status: orderStatus(o).l }));
-    if (R.sections.includes('agreements')) out.agreements = S.agreements.filter((a) => match(a, R.text) && inRange(a.endDate)).filter((a) => { const k = agreeStatus(a).k;
+    if (R.sections.includes('agreements')) out.agreements = S.agreements.filter((a) => inRel('agreements', a) && match(a, R.text) && inRange(a.endDate)).filter((a) => { const k = agreeStatus(a).k;
       return R.status === 'all' || (R.status === 'active' && ['active', 'soon', 'ending'].includes(k)) || (R.status === 'ending' && ['soon', 'ending'].includes(k)) || (R.status === 'closed' && ['ended', 'cancelled'].includes(k)); })
       .sort((a, b) => (a.endDate || '').localeCompare(b.endDate || ''))
       .map((a) => ({ ...a, utilPct: pct(a.utilized || 0, a.targetValue), daysLeft: daysLeft(a.endDate), status: agreeStatus(a).l }));
-    if (R.sections.includes('tasks')) out.tasks = S.tasks.filter((t) => match(t, R.text) && inRange(t.dueDate))
+    if (R.sections.includes('tasks')) out.tasks = S.tasks.filter((t) => inRel('tasks', t) && match(t, R.text) && inRange(t.dueDate))
       .filter((t) => R.taskStatus === 'all' || (R.taskStatus === 'open' ? t.status !== 'done' : t.status === R.taskStatus))
       .filter((t) => R.priority === 'all' || t.priority === R.priority)
       .sort((a, b) => (a.dueDate || '9999').localeCompare(b.dueDate || '9999'))
-      .map((t) => ({ ...t, priority: (PRIORITY[t.priority] || PRIORITY.normal).l, status: (TSTATUS[t.status] || TSTATUS.new).l,
-        link: t.linkOrder ? 'הזמנה ' + ((byId('orders', t.linkOrder) || {}).orderNumber || '') : t.linkAgreement ? 'הסכם ' + ((byId('agreements', t.linkAgreement) || {}).agreementNumber || '') : '' }));
+      .map((t) => ({ ...t, _subtasks: t.subtasks || [], subs: subStats(t).total ? `${subStats(t).done}/${subStats(t).total}` : '',
+        lastLog: (() => { const c = (t.comments || []).filter((x) => x.type !== 'system').sort((a, b) => (b.at || '').localeCompare(a.at || ''))[0]; return c ? `${fmtDT(c.at)} — ${c.text}` : ''; })(), priority: (PRIORITY[t.priority] || PRIORITY.normal).l, status: (TSTATUS[t.status] || TSTATUS.new).l,
+        link: linksOf(t).map((x) => entName(x.type, x.id)).join(', '), tagsTxt: (t.tags || []).map((g) => '#' + g).join(' ') }));
     return out;
   }
   const MONEY_KEYS = ['demandBudget', 'budgetExVat', 'budgetTotal', 'utilized', 'targetValue'];
@@ -1370,6 +1859,13 @@ window.DEMO_SEED = function () {
           <div class="field"><label>עד</label><input type="date" data-r="to" value="${esc(R.to)}"></div>
           <div class="field"><label>עדיפות משימות</label><select data-r="priority"><option value="all">הכל</option>${Object.entries(PRIORITY).map(([k, v]) => `<option value="${k}" ${R.priority === k ? 'selected' : ''}>${v.l}</option>`).join('')}</select></div>
           <div class="field"><label>חיפוש (ספק, קבלן…)</label><input data-r="text" value="${esc(R.text)}"></div>
+          <div class="field full"><label>תיק — הכל שקשור ל…</label><select data-r="link"><option value="">— ללא סינון —</option>
+            ${S.projects.length ? `<optgroup label="פרויקטים">${S.projects.map((x) => `<option value="project:${x.id}" ${R.link === 'project:' + x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</optgroup>` : ''}
+            ${S.people.length ? `<optgroup label="אנשי קשר">${S.people.map((x) => `<option value="person:${x.id}" ${R.link === 'person:' + x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</optgroup>` : ''}
+            ${S.orders.length ? `<optgroup label="הזמנות">${S.orders.map((x) => `<option value="order:${x.id}" ${R.link === 'order:' + x.id ? 'selected' : ''}>${esc(x.orderNumber)}</option>`).join('')}</optgroup>` : ''}
+            ${S.agreements.length ? `<optgroup label="הסכמים">${S.agreements.map((x) => `<option value="agreement:${x.id}" ${R.link === 'agreement:' + x.id ? 'selected' : ''}>${esc(x.name || x.agreementNumber)}</option>`).join('')}</optgroup>` : ''}
+            ${allTags().length ? `<optgroup label="תגיות">${allTags().map((x) => `<option value="tag:${esc(x)}" ${R.link === 'tag:' + x ? 'selected' : ''}>#${esc(x)}</option>`).join('')}</optgroup>` : ''}
+          </select></div>
         </div>
         ${R.sections.map((sec) => `<details style="margin-bottom:8px"><summary style="cursor:pointer;font-weight:600">עמודות — ${SEC_NAME[sec]}</summary><div class="chips" style="margin-top:8px">
           ${REPORT_COLS[sec].map(([k, l]) => `<span class="chip ${R.cols[sec].includes(k) ? 'on' : ''}" data-act="rcol" data-sec="${sec}" data-v="${k}">${l}</span>`).join('')}</div></details>`).join('')}
@@ -1394,6 +1890,14 @@ window.DEMO_SEED = function () {
       cols.forEach(([k], c) => { if (MONEY_KEYS.includes(k)) for (let r = 1; r < aoa.length; r++) { const cell = ws[XLSX.utils.encode_cell({ r, c })]; if (cell && typeof cell.v === 'number') cell.z = '#,##0 ₪'; } });
       XLSX.utils.book_append_sheet(wb, ws, SEC_NAME[sec]);
     });
+    if (data.tasks && data.tasks.length) {
+      const sub = [['משימה ראשית', 'תת‑משימה', 'תאריך יעד', 'בוצע', 'תאריך ביצוע']];
+      data.tasks.forEach((t) => t._subtasks.forEach((x) => sub.push([t.title, x.title, dfmt(x.dueDate), x.done ? 'כן' : 'לא', x.doneAt ? fmtDT(x.doneAt) : ''])));
+      const log = [['משימה', 'סוג', 'תאריך ושעה', 'נרשם ע"י', 'תוכן']];
+      data.tasks.forEach((t) => (t.comments || []).filter((c) => c.type !== 'system').forEach((c) => log.push([t.title, (LOG_TYPES[c.type] || LOG_TYPES.note).l, fmtDT(c.at), c.by, c.text])));
+      if (sub.length > 1) { const ws = XLSX.utils.aoa_to_sheet(sub); ws['!cols'] = [{ wch: 34 }, { wch: 40 }, { wch: 12 }, { wch: 8 }, { wch: 16 }]; XLSX.utils.book_append_sheet(wb, ws, 'תתי משימות'); }
+      if (log.length > 1) { const ws = XLSX.utils.aoa_to_sheet(log); ws['!cols'] = [{ wch: 34 }, { wch: 12 }, { wch: 16 }, { wch: 12 }, { wch: 60 }]; XLSX.utils.book_append_sheet(wb, ws, 'יומן'); }
+    }
     XLSX.writeFile(wb, `${R.title || 'דוח'} ${today()}.xlsx`);
     DB.log('הפיק/ה דוח Excel', 'report', R.title);
   }
@@ -1462,6 +1966,7 @@ window.DEMO_SEED = function () {
   function openDetail(kind, id) {
     S._openDetail = [kind, id];
     if (kind === 'order') openOrder(id); else if (kind === 'agreement') openAgreement(id); else if (kind === 'task') openTask(id);
+    else if (kind === 'picker') openLinkPicker(id); else if (kind.startsWith('ent-')) openEntity(kind.slice(4), id);
   }
 
   /* ---------------- קליטת PDF ---------------- */
@@ -1505,14 +2010,25 @@ window.DEMO_SEED = function () {
   function render() {
     const r = (location.hash.replace(/^#\/?/, '') || 'dashboard').split('?')[0];
     S.route = NAV.find((x) => x.id === r) ? r : 'dashboard';
-    const V = { dashboard: viewDashboard, orders: viewOrders, agreements: viewAgreements, tasks: viewTasks, notes: viewNotes, reports: viewReports, config: viewSettings };
+    const V = { dashboard: viewDashboard, orders: viewOrders, agreements: viewAgreements, tasks: viewTasks, projects: viewProjects, people: viewPeople, notes: viewNotes, reports: viewReports, config: viewSettings };
     const active = document.activeElement && document.activeElement.id;
     const pos = active === 'gsearch' ? document.activeElement.selectionStart : null;
     $('#root').innerHTML = V[S.route]();
     if (active === 'gsearch') { const g = $('#gsearch'); g.focus(); g.setSelectionRange(pos, pos); }
     bindView();
     // רענון חלון פתוח אם הנתונים השתנו
-    if (S._openDetail && !$('#modal form')) { const [k, id] = S._openDetail; const m = $('#modal'); const sc = m && $('.modal', m).scrollTop; openDetail(k, id); const m2 = $('#modal .modal'); if (m2 && sc) m2.scrollTop = sc; }
+    const ae = document.activeElement;
+    if (S._openDetail && !$('#modal form') && !(ae && ae.isContentEditable && ae.closest('#modal'))) {
+      const [k, id] = S._openDetail; const m = $('#modal'); const sc = m && $('.modal', m).scrollTop;
+      const keep = {}; if (m) $$('input[id],textarea[id],select[id]', m).forEach((i) => { if (i.type !== 'checkbox') keep[i.id] = i.value; });
+      const foc = document.activeElement && document.activeElement.id; const typ = m && ($('#logType .chip.on', m) || {}).dataset;
+      openDetail(k, id);
+      Object.entries(keep).forEach(([i, v]) => { const n = document.getElementById(i); if (n && v) n.value = v; });
+      if (typ && typ.v) $$('#logType .chip').forEach((c) => c.classList.toggle('on', c.dataset.v === typ.v));
+      const pq = $('#pickQ'); if (pq && pq.value) pq.dispatchEvent(new Event('input'));
+      if (foc) { const f = document.getElementById(foc); f && f.focus(); }
+      const m2 = $('#modal .modal'); if (m2 && sc) m2.scrollTop = sc;
+    }
   }
   let renderTimer;
   const scheduleRender = () => { clearTimeout(renderTimer); renderTimer = setTimeout(render, 30); };
@@ -1540,19 +2056,22 @@ window.DEMO_SEED = function () {
   }
   async function setTaskStatus(id, status) {
     const t = byId('tasks', id); if (!t || t.status === status) return;
-    const patch = { status }; if (status === 'done') patch.doneAt = new Date().toISOString();
+    const patch = { status, comments: [...(t.comments || []), logEntry(`סטטוס שונה ל"${TSTATUS[status].l}"`)] }; if (status === 'done') patch.doneAt = new Date().toISOString();
     await DB.update('tasks', id, patch); DB.log(`העביר/ה ל"${TSTATUS[status].l}"`, 'task', t.title);
   }
 
   /* חיפוש כללי */
   function globalSearch(q) {
     S.q = q;
-    if (['orders', 'agreements', 'tasks', 'notes'].includes(S.route)) { scheduleRender(); return; }
+    if (['orders', 'agreements', 'tasks', 'notes', 'projects', 'people'].includes(S.route)) { scheduleRender(); return; }
     const box = $('#search-results'); if (!q) { box.innerHTML = ''; return; }
     const res = [
       ...S.orders.filter((x) => match(x, q)).slice(0, 5).map((x) => ['order', x.id, '📄', `הזמנה ${x.orderNumber}`, x.supplier]),
       ...S.agreements.filter((x) => match(x, q)).slice(0, 5).map((x) => ['agreement', x.id, '📑', x.name || x.agreementNumber, x.contractor]),
       ...S.tasks.filter((x) => match(x, q)).slice(0, 5).map((x) => ['task', x.id, '✅', x.title, x.assignee]),
+      ...S.projects.filter((x) => match(x, q)).slice(0, 5).map((x) => ['ent-project', x.id, '🏗️', x.name, 'תיק פרויקט']),
+      ...S.people.filter((x) => match(x, q)).slice(0, 5).map((x) => ['ent-person', x.id, '👤', x.name, [x.role, x.company].filter(Boolean).join(' · ')]),
+      ...allTags().filter((x) => x.includes(q)).slice(0, 3).map((x) => ['ent-tag', x, '#', '#' + x, 'תגית']),
     ];
     box.innerHTML = `<div class="card" style="margin-bottom:16px">${res.length ? res.map(([k, id, ic, t, s]) => `<div class="alert info" data-act="open" data-kind="${k}" data-id="${id}" style="margin-bottom:6px"><div class="ic">${ic}</div><div class="tx"><b>${esc(t)}</b><span>${esc(s || '')}</span></div></div>`).join('') : '<div class="empty" style="padding:10px">לא נמצאו תוצאות</div>'}</div>`;
   }
@@ -1562,7 +2081,18 @@ window.DEMO_SEED = function () {
     if (e.target.id === 'gsearch') globalSearch(e.target.value);
     if (e.target.dataset.r) { S.report[e.target.dataset.r] = e.target.value; const p = $('#rprev'); if (p) p.innerHTML = reportHTML(S.report, reportData(S.report)); }
   });
-  document.addEventListener('change', (e) => {
+  document.addEventListener('change', async (e) => {
+    const tg = e.target.dataset;
+    if (tg.tf) { if (tg.tf === 'status') { await setTaskStatus(tg.tid, e.target.value); return; } await setTaskField(tg.tid, tg.tf, e.target.value.trim()); return; }
+    if (tg.sf) { const t = byId('tasks', tg.tid); const x = (t.subtasks || []).find((y) => y.id === tg.sf2 || y.id === tg.sid); const v = e.target.value.trim(); const f = tg.sf;
+      const L = { priority: 'עדיפות', assignee: 'אחראי/ת', dueDate: 'יעד', status: 'סטטוס' };
+      const show = (k, val) => k === 'priority' ? (PRIORITY[val] || {}).l : k === 'status' ? SSTATUS[val].l : k === 'dueDate' ? dfmt(val) : val;
+      await updateSubs(tg.tid, (l) => { const y = l.find((z) => z.id === tg.sid); y[f] = v; if (f === 'status') { y.done = v === 'done'; y.doneAt = v === 'done' ? new Date().toISOString() : ''; } },
+        `תת‑משימה "${x ? x.title : ''}" — ${L[f]}: ${show(f, v) || '—'}`); return; }
+    if (tg.subToggle) { const t = byId('tasks', tg.tid); const x = (t.subtasks || []).find((y) => y.id === tg.subToggle); const on = e.target.checked;
+      await updateSubs(tg.tid, (l) => { const y = l.find((z) => z.id === tg.subToggle); y.done = on; y.doneAt = on ? new Date().toISOString() : ''; }, `${on ? 'בוצעה' : 'סומנה כלא בוצעה'} תת‑משימה: ${x ? x.title : ''}`); return; }
+    if (tg.subDue) { const t = byId('tasks', tg.tid); const x = (t.subtasks || []).find((y) => y.id === tg.subDue); const v = e.target.value;
+      await updateSubs(tg.tid, (l) => { l.find((z) => z.id === tg.subDue).dueDate = v; }, `יעד לתת‑משימה "${x ? x.title : ''}" ${v ? 'נקבע ל‑' + dfmt(v) : 'הוסר'}`); return; }
     if (e.target.dataset.fsel) { S.f[e.target.dataset.fsel] = e.target.value; render(); }
     if (e.target.dataset.r && e.target.tagName === 'SELECT') { S.report[e.target.dataset.r] = e.target.value; render(); }
   });
@@ -1606,11 +2136,49 @@ window.DEMO_SEED = function () {
       case 'quick-task': openTaskEditor({ priority: 'normal', dueDate: addDays(today(), 1) }, true); break;
       case 'edit-task': openTaskEditor(byId('tasks', id)); break;
       case 'save-task': saveTask(); break;
-      case 'task-for': openTaskEditor(el.dataset.kind === 'order' ? { linkOrder: id, category: 'הזמנות' } : { linkAgreement: id, category: 'הסכמים' }); break;
+      case 'task-for': openTaskEditor({ links: [{ type: el.dataset.kind, id }], category: el.dataset.kind === 'order' ? 'הזמנות' : 'הסכמים' }); break;
+      case 'task-links': openTaskEditor({ links: JSON.parse(el.dataset.links || '[]'), tags: el.dataset.tag ? [el.dataset.tag] : [] }); break;
+      case 'link-picker': openLinkPicker(id); break;
+      case 'pick-tab': openLinkPicker(id, el.dataset.v); break;
+      case 'pick-link': await addLink(id, el.dataset.type, el.dataset.lid); break;
+      case 'unlink': e.stopPropagation(); await removeLink(id, el.dataset.type, el.dataset.lid); break;
+      case 'untag': { e.stopPropagation(); const t = byId('tasks', id); const tags = (t.tags || []).filter((x) => x !== el.dataset.tag); await DB.update('tasks', id, { tags, comments: [...(t.comments || []), logEntry('הוסרה תגית #' + el.dataset.tag)] }); break; }
+      case 'pick-new': { const v = $('#pickNew').value.trim(); if (!v) return $('#pickNew').focus(); const ty = el.dataset.type;
+        const nid = await DB.add(ty === 'project' ? 'projects' : 'people', ty === 'project' ? { name: v, status: 'active' } : { name: v, type: 'אחר' });
+        DB.log(ty === 'project' ? 'הוסיף/ה פרויקט' : 'הוסיף/ה איש קשר', ty, v); await addLink(id, ty, nid); break; }
+      case 'more-nav': modal('תפריט', `<div class="more-nav">${NAV.map((x) => `<a href="#${x.id}" data-act="close-go">${ICONS[x.id === 'config' ? 'settings' : x.id]}<span>${x.label}</span></a>`).join('')}</div>`); break;
+      case 'close-go': closeModal(); location.hash = el.getAttribute('href'); break;
+      case 'new-project': openProjectEditor(); break;
+      case 'edit-project': openProjectEditor(byId('projects', id)); break;
+      case 'save-project': { const d = readForm($('#projForm')); if (!d.name) return toast('חובה לכתוב שם', 'error');
+        if (id) await DB.update('projects', id, d); else await DB.add('projects', d); DB.log(id ? 'עדכן/ה פרויקט' : 'הוסיף/ה פרויקט', 'project', d.name); closeModal(); toast('הפרויקט נשמר', 'ok'); break; }
+      case 'new-person': openPersonEditor(); break;
+      case 'edit-person': openPersonEditor(byId('people', id)); break;
+      case 'save-person': { const d = readForm($('#personForm')); if (!d.name) return toast('חובה לכתוב שם', 'error');
+        if (id) await DB.update('people', id, d); else await DB.add('people', d); DB.log(id ? 'עדכן/ה איש קשר' : 'הוסיף/ה איש קשר', 'person', d.name); closeModal(); toast('איש הקשר נשמר', 'ok'); break; }
+      case 'import-consultants': { const names = [...new Set(S.orders.flatMap((o) => (o.consultants || []).map((c) => c.name)).filter(Boolean))].filter((nm) => !S.people.some((p) => norm(p.name) === norm(nm)));
+        for (const nm of names) { const o = S.orders.find((x) => (x.consultants || []).some((c) => c.name === nm)); await DB.add('people', { name: nm, type: 'יועץ / נותן שירות', company: o ? o.supplier || '' : '', projectId: o ? o.projectId || '' : '' }); }
+        toast(`נוספו ${names.length} אנשי קשר`, 'ok'); break; }
+      case 'ent-report': { const ty = el.dataset.type; S.report = { ...defaultReport(), title: 'תיק ' + entName(ty, id), link: `${ty}:${id}`, status: 'all', taskStatus: 'all' }; closeModal(); location.hash = '#reports'; break; }
       case 'prio': $$('#prioChips .chip').forEach((c) => c.classList.toggle('on', c === el)); $('#taskForm [name=priority]').value = el.dataset.v; break;
       case 'due': $('#taskForm [name=dueDate]').value = addDays(today(), +el.dataset.d); break;
       case 'tstatus': await setTaskStatus(id, el.dataset.v); break;
-      case 'comment': { const v = $('#cmt').value.trim(); if (!v) return; const t = byId('tasks', id); await DB.update('tasks', id, { comments: [...(t.comments || []), { by: DB.user.name, at: new Date().toISOString(), text: v }] }); break; }
+      case 'comment': { const v = $('#cmt').value.trim(); if (!v) return toast('כתוב מה לרשום ביומן', 'error'); const t = byId('tasks', id);
+        const type = ($('#logType .chip.on') || {}).dataset?.v || 'note'; const atEl = $('#cmtAt'); const atv = atEl.value; const at = atv && atv !== atEl.dataset.default ? new Date(atv).toISOString() : undefined;
+        $('#cmt').value = '';
+        await DB.update('tasks', id, { comments: [...(t.comments || []), logEntry(v, type, at)] }); toast('נרשם ביומן', 'ok'); break; }
+      case 'acttab': S.actTab = el.dataset.v; openTask(S._openDetail[1]); break;
+      case 'logtype': $$('#logType .chip').forEach((c) => c.classList.toggle('on', c === el)); break;
+      case 'sub-add': { const ti = $('#subTitle'); const v = ti.value.trim(); if (!v) return ti.focus(); const due = $('#subDue').value;
+        ti.value = ''; $('#subDue').value = '';
+        await updateSubs(id, (l) => l.push({ id: sid(), title: v, dueDate: due, done: false, status: 'new', priority: 'normal', createdAt: new Date().toISOString(), by: DB.user.name }), `נוספה תת‑משימה: ${v}${due ? ' (יעד ' + dfmt(due) + ')' : ''}`);
+        setTimeout(() => { const n = $('#subTitle'); n && n.focus(); }, 80); break; }
+      case 'sub-del': { if (!(await ask('למחוק את תת‑המשימה?'))) return; const t = byId('tasks', id); const x = (t.subtasks || []).find((y) => y.id === el.dataset.sid);
+        await updateSubs(id, (l) => { const i = l.findIndex((y) => y.id === el.dataset.sid); if (i >= 0) l.splice(i, 1); }, x ? `נמחקה תת‑משימה: ${x.title}` : ''); break; }
+      case 'note-sub': openNoteToSub(id); break;
+      case 'do-note-sub': { const tid = $('#nsTask').value; if (!tid) return toast('בחר משימה ראשית', 'error'); const x = byId('notes', id); const due = $('#nsDue').value;
+        await updateSubs(tid, (l) => l.push({ id: sid(), title: x.text, dueDate: due, done: false, createdAt: new Date().toISOString(), by: DB.user.name }), `נוספה תת‑משימה מפיתקית: ${x.text.split('\n')[0].slice(0, 80)}`);
+        await DB.remove('notes', id); closeModal(); toast('הפיתקית נוספה כתת‑משימה', 'ok'); break; }
       // פיתקיות
       case 'quick-note': if (S.route !== 'notes') { location.hash = '#notes'; setTimeout(() => $('#qn') && $('#qn').focus(), 120); } else $('#qn').focus(); break;
       case 'add-note': addNote($('#qn').value); $('#qn').value = ''; break;
@@ -1640,7 +2208,18 @@ window.DEMO_SEED = function () {
       case 'notif': if ('Notification' in window) Notification.requestPermission().then((p) => { toast(p === 'granted' ? 'התראות דפדפן הופעלו' : 'ההרשאה לא ניתנה'); if (p === 'granted') notifyDue(true); }); break;
     }
   });
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); if (e.key === 'Enter' && e.target.id === 'cmt') { e.preventDefault(); $('[data-act=comment]').click(); } });
+  document.addEventListener('focusout', async (e) => {
+    const tg = e.target.dataset || {};
+    if (tg.tedit) { const v = e.target.innerText.trim(); if (tg.tedit === 'title' && !v) { e.target.innerText = byId('tasks', tg.tid).title; return; } await setTaskField(tg.tid, tg.tedit, v); }
+    if (tg.sedit) { const v = e.target.innerText.trim(); const t = byId('tasks', tg.tid); const x = (t.subtasks || []).find((y) => y.id === tg.sedit);
+      if (!v || !x || x.title === v) { if (x) e.target.innerText = x.title; return; }
+      await updateSubs(tg.tid, (l) => { l.find((z) => z.id === tg.sedit).title = v; }, `תת‑משימה שונתה: "${x.title}" ← "${v}"`); }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.target.dataset?.sedit || e.target.dataset?.tedit === 'title')) { e.preventDefault(); e.target.blur(); return; }
+    if (e.key === 'Enter' && e.target.dataset?.tagAdd) { e.preventDefault(); const tid = e.target.dataset.tagAdd; const v = e.target.value.trim().replace(/^#/, ''); if (!v) return; const t = byId('tasks', tid);
+      if (!(t.tags || []).includes(v)) DB.update('tasks', tid, { tags: [...(t.tags || []), v], comments: [...(t.comments || []), logEntry('נוספה תגית #' + v)] }); e.target.value = ''; return; } if (e.key === 'Escape') closeModal(); if (e.key === 'Enter' && e.target.id === 'subTitle') { e.preventDefault(); $('[data-act=sub-add]').click(); }
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && e.target.id === 'cmt') { e.preventDefault(); $('[data-act=comment]').click(); } });
 
   /* גרירת PDF לכל מקום בעמוד */
   let dragDepth = 0;
@@ -1686,7 +2265,7 @@ window.DEMO_SEED = function () {
   DB.init().then((user) => {
     if (!user) return loginView();
     if (user.needsProfile) return profileView();
-    ['orders', 'agreements', 'tasks', 'notes', 'activity'].forEach((c) => DB.subscribe(c, (arr) => { S[c] = arr; scheduleRender(); }));
+    ['orders', 'agreements', 'tasks', 'notes', 'activity', 'projects', 'people'].forEach((c) => DB.subscribe(c, (arr) => { S[c] = arr; scheduleRender(); }));
     DB.subscribe('settings', (arr) => { S.settingsDocs = arr; scheduleRender(); });
     window.addEventListener('hashchange', () => { S.q = ''; const sr = $('#search-results'); sr && (sr.innerHTML = ''); render(); window.scrollTo(0, 0); });
     let lastW = window.innerWidth; window.addEventListener('resize', () => { if ((lastW > 760) !== (window.innerWidth > 760)) render(); lastW = window.innerWidth; });
