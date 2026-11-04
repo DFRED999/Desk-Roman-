@@ -1,0 +1,1678 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1e1b4b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="מרכז שליטה">
+  <title>מרכז שליטה</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+/* ==========================================================
+   מרכז שליטה — עיצוב צבעוני, מותאם מחשב / אייפד / נייד
+   כל הצבעים מוגדרים כאן במשתנים — קל להחליף לפלטה של אתר הגבול
+   ========================================================== */
+:root {
+  --bg: #f3f5fb;
+  --surface: #ffffff;
+  --surface-2: #f8f9fd;
+  --text: #1b1f3b;
+  --muted: #6b7194;
+  --border: #e4e7f2;
+  --side-1: #1e1b4b;
+  --side-2: #3b2f8f;
+
+  --c-orders: #2563eb;  --c-orders-soft: #e0eaff;
+  --c-agree: #0d9488;   --c-agree-soft: #d7f5f1;
+  --c-tasks: #ea7a0c;   --c-tasks-soft: #ffedd9;
+  --c-notes: #db2777;   --c-notes-soft: #fde4ef;
+  --c-report: #7c3aed;  --c-report-soft: #ede4ff;
+  --c-alert: #dc2626;   --c-alert-soft: #fde2e2;
+  --c-warn: #d97706;    --c-warn-soft: #fef1d6;
+  --c-ok: #16a34a;      --c-ok-soft: #dcf5e4;
+
+  --radius: 16px;
+  --shadow: 0 2px 4px rgba(30, 27, 75, .04), 0 8px 24px rgba(30, 27, 75, .06);
+  --side-w: 250px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: 'Heebo', system-ui, sans-serif; background: var(--bg); color: var(--text);
+  direction: rtl; font-size: 15px; -webkit-tap-highlight-color: transparent;
+}
+button, input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
+a { color: var(--c-orders); }
+.hidden { display: none !important; }
+
+/* ---------- מבנה ---------- */
+.app { display: flex; min-height: 100vh; }
+.sidebar {
+  width: var(--side-w); flex-shrink: 0; position: fixed; inset: 0 0 0 auto; z-index: 30;
+  background: linear-gradient(180deg, var(--side-1), var(--side-2)); color: #fff;
+  display: flex; flex-direction: column; padding: 20px 14px;
+}
+.brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 22px; }
+.brand-logo {
+  width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; font-weight: 800; font-size: 20px;
+  background: conic-gradient(from 200deg, #60a5fa, #34d399, #fbbf24, #f472b6, #a78bfa, #60a5fa);
+}
+.brand b { display: block; font-size: 17px; }
+.brand small { opacity: .7; font-size: 12px; }
+.nav { display: flex; flex-direction: column; gap: 4px; }
+.nav a {
+  display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 12px; color: rgba(255,255,255,.82);
+  text-decoration: none; font-weight: 500; transition: background .15s;
+}
+.nav a:hover { background: rgba(255,255,255,.08); }
+.nav a.active { background: rgba(255,255,255,.16); color: #fff; }
+.nav .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.nav .count { margin-inline-start: auto; background: var(--c-alert); color: #fff; font-size: 12px; border-radius: 99px; padding: 1px 8px; }
+.side-foot { margin-top: auto; font-size: 13px; opacity: .85; padding: 8px; }
+.side-foot .mode { display: inline-block; padding: 2px 8px; border-radius: 99px; background: rgba(255,255,255,.15); margin-bottom: 6px; }
+
+.main { flex: 1; margin-inline-start: var(--side-w); min-width: 0; padding: 0 28px 40px; }
+.topbar {
+  position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px; padding: 16px 0;
+  background: linear-gradient(var(--bg) 70%, transparent);
+}
+.topbar h1 { font-size: 24px; margin: 0; font-weight: 800; }
+.topbar .sub { color: var(--muted); font-size: 13px; }
+.topbar .spacer { flex: 1; }
+.search { position: relative; }
+.search input { width: 240px; padding: 10px 38px 10px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.search svg { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+.icon-btn {
+  position: relative; width: 42px; height: 42px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface);
+  display: grid; place-items: center; cursor: pointer;
+}
+.icon-btn .badge { position: absolute; top: -5px; left: -5px; background: var(--c-alert); color: #fff; font-size: 11px; min-width: 20px; height: 20px; border-radius: 99px; display: grid; place-items: center; padding: 0 5px; }
+.user-chip { display: flex; align-items: center; gap: 8px; padding: 5px 10px 5px 5px; background: var(--surface); border: 1px solid var(--border); border-radius: 99px; cursor: pointer; }
+.avatar { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 700; background: linear-gradient(135deg, var(--c-report), var(--c-notes)); }
+
+/* ---------- כרטיסים ---------- */
+.grid { display: grid; gap: 18px; }
+.kpis { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.kpi {
+  border-radius: var(--radius); padding: 18px; color: #fff; position: relative; overflow: hidden; box-shadow: var(--shadow); cursor: pointer;
+}
+.kpi::after { content: ''; position: absolute; width: 140px; height: 140px; border-radius: 50%; background: rgba(255,255,255,.12); left: -40px; bottom: -60px; }
+.kpi .lbl { font-size: 13px; opacity: .9; }
+.kpi .val { font-size: 30px; font-weight: 800; margin-top: 4px; line-height: 1.1; }
+.kpi .meta { font-size: 12.5px; opacity: .85; margin-top: 6px; }
+.kpi.orders { background: linear-gradient(135deg, #2563eb, #4f46e5); }
+.kpi.agree  { background: linear-gradient(135deg, #0d9488, #059669); }
+.kpi.tasks  { background: linear-gradient(135deg, #f59e0b, #ea580c); }
+.kpi.alerts { background: linear-gradient(135deg, #ef4444, #db2777); }
+.kpi.money  { background: linear-gradient(135deg, #7c3aed, #c026d3); }
+
+.card { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; min-width: 0; }
+.card-h { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.card-h h2 { margin: 0; font-size: 17px; font-weight: 700; }
+.card-h .spacer { flex: 1; }
+.card-h .tag { width: 8px; height: 22px; border-radius: 4px; }
+.dash-2 { grid-template-columns: 1.3fr 1fr; margin-top: 18px; }
+.dash-3 { grid-template-columns: repeat(3, 1fr); margin-top: 18px; }
+
+/* ---------- כפתורים וטפסים ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 0; border-radius: 11px; padding: 10px 16px;
+  font-weight: 600; cursor: pointer; background: var(--surface-2); color: var(--text); border: 1px solid var(--border); white-space: nowrap;
+}
+.btn:hover { filter: brightness(.97); }
+.btn.primary { background: var(--c-orders); color: #fff; border-color: transparent; }
+.btn.teal { background: var(--c-agree); color: #fff; border-color: transparent; }
+.btn.orange { background: var(--c-tasks); color: #fff; border-color: transparent; }
+.btn.pink { background: var(--c-notes); color: #fff; border-color: transparent; }
+.btn.violet { background: var(--c-report); color: #fff; border-color: transparent; }
+.btn.danger { background: var(--c-alert-soft); color: var(--c-alert); border-color: transparent; }
+.btn.ghost { background: transparent; border-color: transparent; }
+.btn.sm { padding: 6px 11px; font-size: 13.5px; border-radius: 9px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
+.toolbar .spacer { flex: 1; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field label { font-size: 13px; color: var(--muted); font-weight: 500; }
+.field input, .field select, .field textarea, .toolbar select, .toolbar input {
+  padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); outline: none; width: 100%;
+}
+.toolbar select, .toolbar input { width: auto; }
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--c-orders); box-shadow: 0 0 0 3px var(--c-orders-soft); }
+.field textarea { min-height: 80px; resize: vertical; }
+.form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.form-grid .full { grid-column: 1 / -1; }
+.field.found input { background: #f0fbf4; border-color: #9fdcb5; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { padding: 6px 12px; border-radius: 99px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 13.5px; }
+.chip.on { background: var(--text); color: #fff; border-color: var(--text); }
+
+/* ---------- תגיות סטטוס ---------- */
+.pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 99px; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.pill.ok { background: var(--c-ok-soft); color: var(--c-ok); }
+.pill.warn { background: var(--c-warn-soft); color: var(--c-warn); }
+.pill.bad { background: var(--c-alert-soft); color: var(--c-alert); }
+.pill.gray { background: #eceef5; color: var(--muted); }
+.pill.blue { background: var(--c-orders-soft); color: var(--c-orders); }
+.pill.violet { background: var(--c-report-soft); color: var(--c-report); }
+
+/* ---------- טבלאות ---------- */
+.table-wrap { overflow-x: auto; }
+table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tbl th { text-align: right; font-weight: 600; color: var(--muted); font-size: 12.5px; padding: 10px; border-bottom: 1px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; }
+.tbl td { padding: 12px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.tbl tbody tr { cursor: pointer; transition: background .12s; }
+.tbl tbody tr:hover { background: var(--surface-2); }
+.tbl .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tbl .strong { font-weight: 700; }
+.tbl .sub { color: var(--muted); font-size: 12.5px; }
+.bar { height: 7px; background: #eceef5; border-radius: 99px; overflow: hidden; min-width: 80px; }
+.bar > span { display: block; height: 100%; border-radius: 99px; background: var(--c-ok); }
+.bar.warn > span { background: var(--c-warn); }
+.bar.bad > span { background: var(--c-alert); }
+.empty { text-align: center; padding: 40px 10px; color: var(--muted); }
+
+/* כרטיסיות במקום טבלה בנייד */
+.mcards { display: none; flex-direction: column; gap: 10px; }
+.mcard { background: var(--surface); border-radius: 14px; padding: 14px; box-shadow: var(--shadow); border-inline-start: 5px solid var(--c-orders); }
+.mcard .row { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.mcard .t { font-weight: 700; }
+.mcard .m { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+/* ---------- התראות ---------- */
+.alerts { display: flex; flex-direction: column; gap: 8px; max-height: 420px; overflow: auto; }
+.alert { display: flex; gap: 12px; align-items: center; padding: 11px 12px; border-radius: 12px; background: var(--surface-2); border-inline-start: 4px solid var(--c-warn); cursor: pointer; }
+.alert.bad { border-color: var(--c-alert); background: #fff6f6; }
+.alert.info { border-color: var(--c-orders); }
+.alert .ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; flex-shrink: 0; font-size: 16px; }
+.alert .tx { flex: 1; min-width: 0; }
+.alert .tx b { display: block; font-size: 14px; }
+.alert .tx span { color: var(--muted); font-size: 12.5px; }
+.alert .days { font-weight: 800; font-size: 18px; text-align: center; line-height: 1; }
+.alert .days small { display: block; font-size: 11px; font-weight: 500; color: var(--muted); }
+
+/* ---------- ציר זמן ---------- */
+.timeline { position: relative; padding-right: 18px; }
+.timeline::before { content: ''; position: absolute; right: 5px; top: 4px; bottom: 4px; width: 2px; background: var(--border); }
+.tl-item { position: relative; padding: 0 0 14px; }
+.tl-item::before { content: ''; position: absolute; right: -18px; top: 5px; width: 12px; height: 12px; border-radius: 50%; background: var(--c-orders); border: 2px solid #fff; box-shadow: 0 0 0 2px var(--c-orders-soft); }
+.tl-item.increase::before { background: var(--c-ok); }
+.tl-item.decrease::before { background: var(--c-alert); }
+.tl-item.extend::before { background: var(--c-report); }
+.tl-item.link::before { background: var(--c-tasks); }
+.tl-item .d { font-size: 12px; color: var(--muted); }
+
+/* ---------- קנבן משימות ---------- */
+.kanban { display: grid; grid-template-columns: repeat(4, minmax(220px, 1fr)); gap: 14px; overflow-x: auto; }
+.col { background: var(--surface-2); border-radius: var(--radius); padding: 12px; min-height: 300px; border: 1px solid var(--border); }
+.col.drag-over { outline: 2px dashed var(--c-tasks); }
+.col-h { display: flex; align-items: center; gap: 8px; font-weight: 700; margin-bottom: 10px; }
+.col-h .n { background: var(--surface); border-radius: 99px; padding: 0 8px; font-size: 12.5px; color: var(--muted); }
+.task { background: var(--surface); border-radius: 12px; padding: 12px; margin-bottom: 9px; box-shadow: 0 1px 3px rgba(0,0,0,.06); cursor: grab; border-inline-start: 4px solid var(--c-tasks); }
+.task.p-urgent { border-color: var(--c-alert); }
+.task.p-high { border-color: var(--c-tasks); }
+.task.p-normal { border-color: var(--c-orders); }
+.task.p-low { border-color: #a3a9c7; }
+.task .t { font-weight: 600; margin-bottom: 6px; }
+.task .m { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 12.5px; color: var(--muted); }
+.task.overdue .due { color: var(--c-alert); font-weight: 700; }
+
+/* ---------- פיתקיות ---------- */
+.quick-note { display: flex; gap: 10px; margin-bottom: 18px; }
+.quick-note textarea { flex: 1; min-height: 52px; padding: 14px; border-radius: 14px; border: 2px dashed #f4a7c8; background: #fff8fb; resize: vertical; font-size: 16px; }
+.notes-board { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; }
+.sticky {
+  min-height: 170px; padding: 16px; border-radius: 4px 4px 18px 4px; box-shadow: 0 6px 16px rgba(0,0,0,.08); display: flex; flex-direction: column;
+  transform: rotate(var(--rot, 0deg)); transition: transform .15s;
+}
+.sticky:hover { transform: rotate(0) scale(1.02); }
+.sticky .txt { flex: 1; white-space: pre-wrap; font-size: 15.5px; line-height: 1.5; outline: none; }
+.sticky .foot { display: flex; gap: 4px; align-items: center; margin-top: 10px; font-size: 12px; opacity: .8; }
+.sticky .foot .spacer { flex: 1; }
+/* */
+.sticky button { white-space: nowrap; background: rgba(255,255,255,.6); border: 0; border-radius: 8px; padding: 4px 8px; cursor: pointer; font-size: 12.5px; }
+.s-yellow { background: #fff3a8; } .s-pink { background: #ffd1e3; } .s-blue { background: #cfe6ff; }
+.s-green { background: #d2f5d6; } .s-orange { background: #ffdcb8; } .s-violet { background: #e4d9ff; }
+.color-dots { display: flex; gap: 4px; }
+.color-dots i { width: 14px; height: 14px; border-radius: 50%; cursor: pointer; border: 1px solid rgba(0,0,0,.1); }
+
+/* ---------- אזור גרירת PDF ---------- */
+.dropzone {
+  border: 2px dashed #9db8f5; border-radius: var(--radius); padding: 22px; text-align: center; background: linear-gradient(135deg, #f1f6ff, #f6f1ff);
+  cursor: pointer; transition: all .15s; margin-bottom: 16px;
+}
+.dropzone.over { border-color: var(--c-orders); background: var(--c-orders-soft); transform: scale(1.01); }
+.dropzone b { color: var(--c-orders); }
+.dropzone .hint { color: var(--muted); font-size: 13px; margin-top: 4px; }
+.page-drop { position: fixed; inset: 0; background: rgba(37,99,235,.18); backdrop-filter: blur(2px); z-index: 90; display: grid; place-items: center; pointer-events: none; }
+.page-drop div { background: #fff; padding: 30px 40px; border-radius: 20px; font-size: 20px; font-weight: 700; color: var(--c-orders); box-shadow: var(--shadow); }
+
+/* ---------- חלונות ---------- */
+.modal-bg { position: fixed; inset: 0; background: rgba(20, 18, 50, .45); z-index: 60; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.modal { background: var(--surface); border-radius: 20px; width: min(760px, 100%); max-height: 92vh; overflow: auto; box-shadow: 0 30px 60px rgba(0,0,0,.25); }
+.modal.wide { width: min(980px, 100%); }
+.modal-h { display: flex; align-items: center; gap: 10px; padding: 18px 20px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); z-index: 2; }
+.modal-h h3 { margin: 0; font-size: 18px; flex: 1; }
+.modal-b { padding: 20px; }
+.modal-f { display: flex; gap: 10px; justify-content: flex-start; padding: 14px 20px; border-top: 1px solid var(--border); position: sticky; bottom: 0; background: var(--surface); flex-wrap: wrap; }
+.modal-f .spacer { flex: 1; }
+.section-t { font-weight: 700; margin: 18px 0 10px; display: flex; align-items: center; gap: 8px; }
+.info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.info { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
+.info small { display: block; color: var(--muted); font-size: 12px; }
+.info b { font-size: 15px; }
+.banner { padding: 12px 14px; border-radius: 12px; background: var(--c-ok-soft); color: #14532d; margin-bottom: 14px; font-size: 14px; }
+.banner.warn { background: var(--c-warn-soft); color: #78350f; }
+
+.toast-wrap { position: fixed; bottom: 24px; left: 24px; z-index: 100; display: flex; flex-direction: column; gap: 8px; }
+.toast { background: var(--text); color: #fff; padding: 12px 18px; border-radius: 12px; box-shadow: var(--shadow); animation: up .2s ease-out; }
+.toast.error { background: var(--c-alert); }
+.toast.ok { background: var(--c-ok); }
+@keyframes up { from { transform: translateY(10px); opacity: 0; } }
+
+/* ---------- מסך כניסה ---------- */
+.login { min-height: 100vh; display: grid; place-items: center; background: linear-gradient(135deg, #1e1b4b, #3b2f8f 45%, #0d9488); padding: 16px; }
+.login .box { background: #fff; border-radius: 24px; padding: 32px; width: min(400px, 100%); box-shadow: 0 30px 60px rgba(0,0,0,.3); }
+.login h1 { margin: 12px 0 4px; }
+.login p { color: var(--muted); margin: 0 0 20px; }
+.login .field { margin-bottom: 14px; }
+
+/* ---------- ניווט תחתון ו-FAB לנייד ---------- */
+.bottom-nav { display: none; }
+.fab { display: none; }
+.fab-menu { display: none; }
+
+/* ---------- דוח מודפס ---------- */
+.report-doc { direction: rtl; font-family: 'Heebo', sans-serif; color: #1b1f3b; padding: 10px; background: #fff; }
+.report-doc h1 { font-size: 22px; margin: 0 0 4px; }
+.report-doc h2 { font-size: 16px; margin: 20px 0 8px; padding: 6px 10px; border-radius: 8px; color: #fff; }
+.report-doc table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.report-doc th { background: #eef1fb; text-align: right; padding: 6px; border: 1px solid #dfe3f0; }
+.report-doc td { padding: 5px 6px; border: 1px solid #e7eaf3; }
+.report-doc tr { page-break-inside: avoid; }
+.report-doc.pdf-mode, .report-doc.pdf-mode * { letter-spacing: .01px; }
+.report-doc .meta { color: #6b7194; font-size: 12px; }
+.report-doc .sum { display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap; }
+.report-doc .sum div { background: #f3f5fb; border-radius: 8px; padding: 6px 10px; font-size: 12px; }
+
+/* ==========================================================
+   אייפד
+   ========================================================== */
+@media (max-width: 1100px) {
+  :root { --side-w: 78px; }
+  .brand b, .brand small, .nav a span.lbl, .side-foot { display: none; }
+  .nav a { justify-content: center; position: relative; }
+  .nav .count { position: absolute; top: 2px; left: 6px; margin: 0; }
+  .dash-2, .dash-3 { grid-template-columns: 1fr 1fr; }
+  .search input { width: 180px; }
+}
+
+/* ==========================================================
+   נייד
+   ========================================================== */
+@media (max-width: 760px) {
+  body { font-size: 15.5px; }
+  .sidebar { display: none; }
+  .main { margin: 0; padding: 0 16px 100px; }
+  .topbar { padding: 12px 0; flex-wrap: wrap; }
+  .topbar h1 { font-size: 20px; }
+  .search { order: 10; width: 100%; }
+  .search input { width: 100%; }
+  .user-chip .nm { display: none; }
+  .kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .kpi { padding: 14px; }
+  .kpi .val { font-size: 24px; }
+  .kpis .kpi:last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .dash-2, .dash-3 { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .info-grid { grid-template-columns: 1fr 1fr; }
+  .table-wrap.responsive { display: none; }
+  .mcards { display: flex; }
+  .kanban { grid-template-columns: 1fr; overflow: visible; }
+  .col { min-height: auto; }
+  .modal-bg { padding: 0; align-items: flex-end; }
+  .modal { border-radius: 20px 20px 0 0; max-height: 94vh; }
+  .field input, .field select, .field textarea { font-size: 16px; } /* מונע זום באייפון */
+  .bottom-nav {
+    display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 40; background: var(--surface); border-top: 1px solid var(--border);
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+  }
+  .bottom-nav a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; color: var(--muted); text-decoration: none; padding: 4px; position: relative; }
+  .bottom-nav a.active { color: var(--c-report); font-weight: 700; }
+  .bottom-nav .count { position: absolute; top: 0; left: 50%; margin-left: -22px; background: var(--c-alert); color: #fff; font-size: 10px; border-radius: 99px; padding: 0 5px; }
+  .fab {
+    display: grid; place-items: center; position: fixed; bottom: calc(76px + env(safe-area-inset-bottom)); left: 18px; z-index: 41; width: 58px; height: 58px;
+    border-radius: 50%; border: 0; color: #fff; font-size: 30px; background: linear-gradient(135deg, var(--c-tasks), var(--c-notes)); box-shadow: 0 10px 24px rgba(219,39,119,.4);
+  }
+  .fab-menu.open { display: flex; flex-direction: column; gap: 10px; position: fixed; bottom: calc(146px + env(safe-area-inset-bottom)); left: 18px; z-index: 41; }
+  .fab-menu .btn { box-shadow: var(--shadow); padding: 12px 18px; }
+  .toast-wrap { left: 16px; right: 16px; bottom: 90px; }
+}
+@media print {
+  .sidebar, .topbar, .bottom-nav, .fab { display: none !important; }
+  .main { margin: 0; }
+}
+
+</style>
+</head>
+<body>
+  <div id="root"></div>
+  <div class="toast-wrap" id="toasts"></div>
+
+  <!-- ספריות -->
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <!-- קוד האתר -->
+  <!-- ============ הדבק כאן את פרטי Firebase (שלב 6 בהוראות) ============ -->
+<script>
+/* ==========================================================
+   הגדרות Firebase
+   1. היכנס ל- https://console.firebase.google.com ופתח פרויקט
+   2. Project settings → Your apps → Web app → העתק את ה-config לכאן
+   כל עוד apiKey ריק — האתר עובד במצב הדגמה (שמירה מקומית בדפדפן בלבד)
+   ========================================================== */
+window.FIREBASE_CONFIG = {
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  storageBucket: "",
+  messagingSenderId: "",
+  appId: ""
+};
+
+</script>
+  <script>
+/* נתוני הדגמה — נטענים רק במצב הדגמה (ללא Firebase) */
+window.DEMO_SEED = function () {
+  const d = (days) => { const x = new Date(); x.setDate(x.getDate() + days); return x.toISOString().slice(0, 10); };
+  const ts = new Date().toISOString();
+  const base = { createdAt: ts, updatedAt: ts, createdBy: 'הדגמה' };
+  return {
+    orders: {
+      o1: { ...base, orderNumber: '4441493064', version: '0', demandNumber: '0088060008', supplier: 'ב.ד. אטלס הנדסה וניהול פרויקטים', supplierNumber: '11027652',
+        description: 'תאום אחזקת בינוי / מנהלת גבולות ותפר', unit: 'מנהלת גבולות ותפר', buyer: 'מירי גבאי', method: 'שעתונים', paymentTerms: 45,
+        demandBudget: 329400, budgetExVat: 329400, vat: 59292, budgetTotal: 388692, utilized: 241500,
+        startDate: '2025-12-14', endDate: '2026-12-13', consultants: [{ name: 'דנה מנצור', hours: 1800, rate: 183, total: 329400 }],
+        history: [{ type: 'create', date: '2025-12-14', note: 'נקלט מקובץ ההזמנה' }] },
+      o2: { ...base, orderNumber: '4441480021', version: '1', demandNumber: '0088051230', supplier: 'הנדסת גליל בע"מ', description: 'פיקוח עליון — גדר מערכת גזרה צפון',
+        unit: 'מנהלת גבולות ותפר', demandBudget: 520000, budgetExVat: 480000, vat: 86400, budgetTotal: 566400, utilized: 455000,
+        startDate: d(-330), endDate: d(22), consultants: [],
+        history: [{ type: 'create', date: d(-330) }, { type: 'increase', date: d(-60), amount: 60000, note: 'הגדלה לפי סעיף 10.3' }] },
+      o3: { ...base, orderNumber: '4441475510', version: '0', demandNumber: '0088047761', supplier: 'מתכנני הנגב', description: 'תכנון כבישי ביטחון — קטע 4',
+        unit: 'אגף ההנדסה והבינוי', demandBudget: 210000, budgetExVat: 210000, vat: 37800, budgetTotal: 247800, utilized: 62000,
+        startDate: d(-120), endDate: d(245), consultants: [], history: [{ type: 'create', date: d(-120) }] },
+      o4: { ...base, orderNumber: '4441420987', version: '2', demandNumber: '0088031002', supplier: 'מתכנני הנגב', description: 'תכנון כבישי ביטחון — קטע 3 (הסתיים)',
+        unit: 'אגף ההנדסה והבינוי', demandBudget: 300000, budgetExVat: 285000, vat: 51300, budgetTotal: 336300, utilized: 285000,
+        startDate: d(-500), endDate: d(-130), linkedTo: 'o3', consultants: [], history: [{ type: 'create', date: d(-500) }, { type: 'link', date: d(-120), note: 'הועברה להזמנת המשך 4441475510' }] },
+    },
+    agreements: {
+      a1: { ...base, agreementNumber: '7100018822', demandNumber: '0088040001', name: 'הסכם מסגרת — אחזקת גדרות ומכשולים', contractor: 'א.ב. גדרות הצפון',
+        targetValue: 4500000, utilized: 3720000, startDate: d(-600), endDate: d(35), history: [] },
+      a2: { ...base, agreementNumber: '7100019450', demandNumber: '0088044410', name: 'הסכם מחירים — עבודות עפר וכבישים', contractor: 'עפר וסלילה בע"מ',
+        targetValue: 12000000, utilized: 4100000, startDate: d(-200), endDate: d(530), history: [] },
+      a3: { ...base, agreementNumber: '7100020013', demandNumber: '0088050077', name: 'חוזה — תאורת ביטחון', contractor: 'אור ומתח מערכות',
+        targetValue: 1800000, utilized: 1650000, startDate: d(-400), endDate: d(80), history: [] },
+    },
+    tasks: {
+      t1: { ...base, title: 'לבדוק הגדלת תקציב להזמנה 4441480021', description: 'הניצול מעל 90%. להכין בקשת הגדלה לוועדה.', priority: 'urgent', status: 'progress', dueDate: d(2), assignee: 'הרל"שית', category: 'הזמנות', linkOrder: 'o2', comments: [{ by: 'המפקד', at: ts, text: 'חשוב לסגור לפני סוף החודש' }] },
+      t2: { ...base, title: 'לתאם סיור שטח עם קבלן הגדרות', priority: 'high', status: 'new', dueDate: d(5), assignee: 'הרל"שית', category: 'שטח', comments: [] },
+      t3: { ...base, title: 'להכין טבלת חידוש הסכמים לרבעון הבא', priority: 'normal', status: 'waiting', dueDate: d(14), assignee: 'הרל"שית', category: 'הסכמים', linkAgreement: 'a1', comments: [] },
+      t4: { ...base, title: 'להוציא סיכום ישיבת צוות', priority: 'normal', status: 'new', dueDate: d(-1), assignee: 'הרל"שית', category: 'מנהלה', comments: [] },
+      t5: { ...base, title: 'להעביר חשבון חודשי לאישור', priority: 'low', status: 'done', dueDate: d(-4), assignee: 'הרל"שית', category: 'כספים', comments: [], doneAt: ts },
+    },
+    notes: {
+      n1: { ...base, text: 'להתקשר למירי גבאי לגבי גרסה 1', color: 'yellow' },
+      n2: { ...base, text: 'המפקד ביקש: מצגת תקציב לישיבה ביום ה׳', color: 'pink', pinned: true },
+    },
+    activity: {}, settings: { main: { alertDays: 30, warnDays: 60, utilWarn: 80, utilCritical: 90, reportPresets: [] } }, users: {},
+  };
+};
+
+</script>
+  <script>
+/* ==========================================================
+   שכבת נתונים — Firebase (Firestore + Auth) או מצב הדגמה מקומי
+   ========================================================== */
+(function (global) {
+  'use strict';
+  const COLLECTIONS = ['orders', 'agreements', 'tasks', 'notes', 'activity', 'settings', 'users'];
+  const LS_KEY = 'atlas-command-demo-v1';
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const nowISO = () => new Date().toISOString();
+
+  const cfg = global.FIREBASE_CONFIG || {};
+  const useFirebase = !!(cfg.apiKey && cfg.projectId && global.firebase);
+
+  const DB = {
+    mode: useFirebase ? 'firebase' : 'demo',
+    user: null,
+    _listeners: {},
+    _userCbs: [],
+  };
+
+  /* ---------------- מצב הדגמה ---------------- */
+  let demo = null;
+  function loadDemo() {
+    try { demo = JSON.parse(localStorage.getItem(LS_KEY)); } catch (e) { demo = null; }
+    if (!demo) { demo = global.DEMO_SEED ? global.DEMO_SEED() : {}; }
+    COLLECTIONS.forEach((c) => { demo[c] = demo[c] || {}; });
+    saveDemo();
+  }
+  function saveDemo() { try { localStorage.setItem(LS_KEY, JSON.stringify(demo)); } catch (e) { /* אחסון חסום */ } }
+  function emit(col) {
+    const arr = Object.entries(demo[col] || {}).map(([id, d]) => ({ id, ...d }));
+    (DB._listeners[col] || []).forEach((cb) => cb(arr));
+  }
+
+  /* ---------------- Firebase ---------------- */
+  let fs = null, auth = null;
+  if (useFirebase) {
+    firebase.initializeApp(cfg);
+    fs = firebase.firestore();
+    try { fs.enablePersistence({ synchronizeTabs: true }).catch(() => {}); } catch (e) {}
+    auth = firebase.auth();
+  }
+
+  DB.init = function () {
+    return new Promise((resolve) => {
+      if (!useFirebase) {
+        loadDemo();
+        let role = 'commander'; try { role = localStorage.getItem(LS_KEY + '-role') || 'commander'; } catch (e) {}
+        DB.user = { uid: 'demo-' + role, name: role === 'commander' ? 'המפקד' : 'הרל"שית', role, email: '' };
+        resolve(DB.user);
+        return;
+      }
+      auth.onAuthStateChanged(async (u) => {
+        if (!u) { DB.user = null; resolve(null); DB._userCbs.forEach((cb) => cb(null)); return; }
+        let profile = {};
+        try { const d = await fs.collection('users').doc(u.uid).get(); profile = d.exists ? d.data() : {}; } catch (e) {}
+        DB.user = { uid: u.uid, email: u.email, name: profile.name || u.displayName || u.email, role: profile.role || 'assistant' };
+        resolve(DB.user);
+        DB._userCbs.forEach((cb) => cb(DB.user));
+      });
+    });
+  };
+
+  DB.onUser = (cb) => DB._userCbs.push(cb);
+  DB.signIn = (email, pw) => auth.signInWithEmailAndPassword(email, pw);
+  DB.signOut = () => (useFirebase ? auth.signOut() : Promise.resolve());
+  DB.resetPassword = (email) => auth.sendPasswordResetEmail(email);
+  DB.setDemoRole = (role) => { try { localStorage.setItem(LS_KEY + '-role', role); } catch (e) {} location.reload(); };
+  DB.resetDemo = () => { try { localStorage.removeItem(LS_KEY); } catch (e) {} location.reload(); };
+
+  DB.subscribe = function (col, cb) {
+    (DB._listeners[col] = DB._listeners[col] || []).push(cb);
+    if (!useFirebase) { emit(col); return; }
+    fs.collection(col).onSnapshot((snap) => {
+      cb(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    }, (err) => { console.error(col, err); global.toast && global.toast('שגיאת הרשאה בקריאת ' + col, 'error'); });
+  };
+
+  function stamp(data, isNew) {
+    const s = { ...data, updatedAt: nowISO(), updatedBy: DB.user ? DB.user.name : '' };
+    if (isNew) { s.createdAt = nowISO(); s.createdBy = DB.user ? DB.user.name : ''; }
+    delete s.id;
+    return s;
+  }
+
+  DB.add = async function (col, data) {
+    const d = stamp(data, true);
+    if (!useFirebase) { const id = uid(); demo[col][id] = d; saveDemo(); emit(col); return id; }
+    const ref = await fs.collection(col).add(d);
+    return ref.id;
+  };
+  DB.set = async function (col, id, data) {
+    const d = stamp(data, false);
+    if (!useFirebase) { demo[col][id] = { ...(demo[col][id] || {}), ...d }; saveDemo(); emit(col); return id; }
+    await fs.collection(col).doc(id).set(d, { merge: true });
+    return id;
+  };
+  DB.update = async function (col, id, patch) {
+    const d = stamp(patch, false);
+    if (!useFirebase) { demo[col][id] = { ...(demo[col][id] || {}), ...d }; saveDemo(); emit(col); return; }
+    await fs.collection(col).doc(id).update(d);
+  };
+  DB.remove = async function (col, id) {
+    if (!useFirebase) { delete demo[col][id]; saveDemo(); emit(col); return; }
+    await fs.collection(col).doc(id).delete();
+  };
+
+  /* גיבוי ושחזור */
+  DB.exportAll = function (state) {
+    const out = {};
+    ['orders', 'agreements', 'tasks', 'notes', 'settings'].forEach((c) => { out[c] = state[c]; });
+    return out;
+  };
+  DB.importAll = async function (data) {
+    for (const col of ['orders', 'agreements', 'tasks', 'notes', 'settings']) {
+      for (const item of data[col] || []) { const { id, ...rest } = item; await DB.set(col, id || uid(), rest); }
+    }
+  };
+
+  DB.log = function (action, entity, label) {
+    return DB.add('activity', { action, entity, label, user: DB.user ? DB.user.name : '' }).catch(() => {});
+  };
+
+  global.DB = DB;
+})(window);
+
+</script>
+  <script>
+/* ==========================================================
+   קליטת הזמנת עבודה של משהב"ט מקובץ PDF
+   - חילוץ טקסט עם pdf.js (בדפדפן)
+   - זיהוי שדות לפי תבנית ההזמנה הרשמית
+   ========================================================== */
+(function (global) {
+  'use strict';
+
+  const Q = '["״\'׳]'; // סוגי גרשיים אפשריים
+  const DATE = '(\\d{1,2}[./]\\d{1,2}[./]\\d{2,4})';
+  const MONEY = '([\\d,]+(?:\\.\\d+)?)';
+
+  function toISO(d) {
+    if (!d) return '';
+    const m = d.match(/(\d{1,2})[./](\d{1,2})[./](\d{2,4})/);
+    if (!m) return '';
+    let y = m[3];
+    if (y.length === 2) y = '20' + y;
+    return `${y}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  }
+  const num = (s) => (s == null ? null : parseFloat(String(s).replace(/,/g, '')));
+  const clean = (s) => (s || '').replace(/\s+/g, ' ').trim();
+
+  function first(text, re) {
+    const m = text.match(re);
+    return m ? m[1] : null;
+  }
+
+  /** מקבל את הטקסט המלא של ההזמנה ומחזיר אובייקט שדות */
+  function parseOrderText(text) {
+    const t = text.replace(/\r/g, '');
+    const out = { _found: [] };
+    const set = (k, v) => { if (v !== null && v !== undefined && v !== '' && !(typeof v === 'number' && isNaN(v))) { out[k] = v; out._found.push(k); } };
+
+    set('orderNumber', first(t, /הזמנה\s+(\d{8,12})/));
+    set('version', first(t, /גרסה\s*[()]?\s*(\d+)/));
+    set('demandNumber', first(t, new RegExp(`מס${Q}?\\s*דרישה\\s*:\\s*(\\d+)`)) || first(t, /מספר\s*דרישה\s*:\s*(\d+)/));
+
+    const supplier = first(t, /לכבוד\s*:\s*([^\n]+?)(?:\s{3,}|\n|$)/);
+    set('supplier', clean(supplier));
+    set('supplierNumber', first(t, /ספק\/ית\s*:\s*(\d+)/));
+    set('unit', clean(first(t, /איש\s*קשר\s*:\s*(.+?)(?:\s{2,}|\n|טלפון)/)));
+    set('buyer', clean(first(t, /קבוצת\s*רכש\s*:\s*([^\s]+(?:\s[^\s]+)?)/)));
+
+    // תיאור: עדיפות לשורת הפריט, אחרת "נתוני כותרת"
+    let desc = first(t, /תיאור\s*:\s*(.+?)(?:\s{2,}|\n)/);
+    const header = first(t, /נתוני כותרת[^\n]*\n\s*(.+?)(?:\s{3,}|\n)/);
+    const unit = clean(first(t, /איש\s*קשר\s*:\s*(.+?)(?:\s{2,}|\n|טלפון)/));
+    if (header && unit && header.includes(unit)) desc = header.slice(0, header.indexOf(unit) + unit.length);
+    set('description', clean(desc));
+
+    set('startDate', toISO(first(t, new RegExp(`תחילת\\s*תוקף\\s*ההזמנה\\s*:\\s*${DATE}`))));
+    set('endDate', toISO(first(t, new RegExp(`סוף\\s*תוקף\\s*:\\s*${DATE}`))));
+    set('method', clean(first(t, /שיטת\s*התקשרות\s*:\s*(\S+)/)));
+    set('paymentTerms', num(first(t, /תנאי\s*תשלום\s*:\s*(\d+)/)));
+
+    set('budgetExVat', num(first(t, new RegExp(`ללא\\s*מע${Q}מ\\s*:\\s*${MONEY}`))));
+    set('vat', num(first(t, new RegExp(`(?<!ללא\\s*)(?<![א-ת])מע${Q}מ\\s*:\\s*${MONEY}`))));
+    set('budgetTotal', num(first(t, new RegExp(`סה${Q}כ\\s*סכום\\s*ההזמנה\\s*:\\s*${MONEY}`))));
+
+    // גיבוי לסכומים: זוג מספרים שבו אחד גדול מהשני ב‑18% מע"מ
+    if (!out.budgetExVat || !out.budgetTotal) {
+      const nums = [...t.matchAll(/(\d{1,3}(?:,\d{3})+(?:\.\d+)?)/g)].map((m) => num(m[1]));
+      for (const a of nums) for (const b of nums) {
+        if (a > 1000 && Math.abs(b - a * 1.18) < 1) { set('budgetExVat', a); set('budgetTotal', b); set('vat', +(b - a).toFixed(2)); break; }
+      }
+    }
+
+    // נותני שירות / יועצים ושעות
+    const names = [...t.matchAll(/שם\s*יועץ\s*:\s*(.+?)(?:\s{2,}|\n)/g)].map((m) => clean(m[1]));
+    const lines = [...t.matchAll(new RegExp(`שורה\\s*(\\d+)\\s*:\\s*${MONEY}\\s*ש${Q}ע\\s*\\*\\s*${MONEY}\\s*=\\s*${MONEY}`, 'g'))];
+    const consultants = [];
+    lines.forEach((m, i) => consultants.push({ name: names[i] || '', line: m[1], hours: num(m[2]), rate: num(m[3]), total: num(m[4]) }));
+    if (!consultants.length) names.forEach((n) => consultants.push({ name: n, hours: null, rate: null, total: null }));
+    if (consultants.length) set('consultants', consultants);
+
+    return out;
+  }
+
+  /** חילוץ טקסט מקובץ PDF בדפדפן, שורה אחרי שורה */
+  async function extractPdfText(file) {
+    const lib = global.pdfjsLib;
+    if (!lib) throw new Error('ספריית PDF לא נטענה');
+    const buf = await file.arrayBuffer();
+    const doc = await lib.getDocument({ data: new Uint8Array(buf) }).promise;
+    let out = '';
+    for (let p = 1; p <= doc.numPages; p++) {
+      const page = await doc.getPage(p);
+      const tc = await page.getTextContent();
+      const rows = {};
+      tc.items.forEach((it) => {
+        const y = Math.round(it.transform[5] / 3);
+        (rows[y] = rows[y] || []).push({ x: it.transform[4], s: it.str });
+      });
+      Object.keys(rows).sort((a, b) => b - a).forEach((y) => {
+        out += rows[y].sort((a, b) => b.x - a.x).map((i) => i.s).join(' ') + '\n';
+      });
+      out += '\n';
+    }
+    return out;
+  }
+
+  async function parseOrderPdf(file) {
+    const text = await extractPdfText(file);
+    const data = parseOrderText(text);
+    data._textLength = text.length;
+    return data;
+  }
+
+  const api = { parseOrderText, parseOrderPdf, extractPdfText, toISO };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else global.OrderParser = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+  <script>
+/* ==========================================================
+   מרכז שליטה — הזמנות עבודה, הסכמים, משימות, פיתקיות, התראות ודוחות
+   ========================================================== */
+(function () {
+  'use strict';
+  if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  /* ---------------- מצב ---------------- */
+  const S = {
+    orders: [], agreements: [], tasks: [], notes: [], activity: [], settingsDocs: [],
+    route: 'dashboard', q: '',
+    f: { orderStatus: 'all', agreeStatus: 'all', taskAssignee: 'all', taskPriority: 'all', taskView: 'kanban', sort: {} },
+  };
+  const settings = () => Object.assign({ alertDays: 30, warnDays: 60, utilWarn: 80, utilCritical: 90, reportPresets: [], snoozed: {} },
+    (S.settingsDocs.find((d) => d.id === 'main') || {}));
+
+  /* ---------------- עזרים ---------------- */
+  const $ = (s, el = document) => el.querySelector(s);
+  const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const money = (n) => (n == null || n === '' || isNaN(n) ? '—' : '₪' + Number(n).toLocaleString('he-IL', { maximumFractionDigits: 0 }));
+  const numFmt = (n) => (n == null || n === '' || isNaN(n) ? '—' : Number(n).toLocaleString('he-IL', { maximumFractionDigits: 2 }));
+  const today = () => new Date().toISOString().slice(0, 10);
+  const addDays = (iso, n) => { const d = new Date(iso || today()); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+  const dfmt = (iso) => { if (!iso) return '—'; const [y, m, d] = String(iso).slice(0, 10).split('-'); return `${d}/${m}/${y}`; };
+  const daysLeft = (iso) => (iso ? Math.round((new Date(iso + 'T00:00:00') - new Date(today() + 'T00:00:00')) / 864e5) : null);
+  const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+  const n = (v) => (v === '' || v == null ? null : Number(String(v).replace(/,/g, '')));
+  const byId = (col, id) => S[col].find((x) => x.id === id);
+  const VAT = 0.18;
+
+  window.toast = function (msg, type = '') {
+    const t = document.createElement('div');
+    t.className = 'toast ' + type; t.textContent = msg; $('#toasts').appendChild(t);
+    setTimeout(() => t.remove(), 3200);
+  };
+
+  const ICONS = {
+    dashboard: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>',
+    orders: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>',
+    agreements: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3h8l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="m9 14 2 2 4-4"/></svg>',
+    tasks: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg>',
+    notes: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v11l-5 5H4z"/><path d="M15 20v-5h5"/></svg>',
+    reports: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+    settings: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+    bell: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
+    search: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>',
+  };
+  const NAV = [
+    { id: 'dashboard', label: 'דשבורד', color: '#a78bfa' },
+    { id: 'orders', label: 'הזמנות עבודה', color: '#60a5fa' },
+    { id: 'agreements', label: 'הסכמים וחוזים', color: '#34d399' },
+    { id: 'tasks', label: 'משימות', color: '#fbbf24' },
+    { id: 'notes', label: 'פיתקיות', color: '#f472b6' },
+    { id: 'reports', label: 'דוחות', color: '#c4b5fd' },
+    { id: 'config', label: 'הגדרות', color: '#cbd5e1' },
+  ];
+  const PRIORITY = { urgent: { l: 'דחוף', c: 'bad' }, high: { l: 'גבוה', c: 'warn' }, normal: { l: 'רגיל', c: 'blue' }, low: { l: 'נמוך', c: 'gray' } };
+  const TSTATUS = { new: { l: 'חדשה', color: '#2563eb' }, progress: { l: 'בטיפול', color: '#ea7a0c' }, waiting: { l: 'ממתין לגורם', color: '#7c3aed' }, done: { l: 'הושלמה', color: '#16a34a' } };
+  const NOTE_COLORS = ['yellow', 'pink', 'blue', 'green', 'orange', 'violet'];
+
+  /* ---------------- סטטוסים ---------------- */
+  function orderStatus(o) {
+    const st = settings();
+    if (o.cancelled) return { k: 'cancelled', l: 'בוטלה', c: 'gray' };
+    if (o.linkedTo) return { k: 'linked', l: 'הועברה להמשך', c: 'violet' };
+    const dl = daysLeft(o.endDate);
+    if (dl == null) return { k: 'active', l: 'פעילה', c: 'ok' };
+    if (dl < 0) return { k: 'ended', l: 'הסתיימה', c: 'gray' };
+    if (dl <= st.alertDays) return { k: 'ending', l: 'מסתיימת בקרוב', c: 'bad' };
+    if (dl <= st.warnDays) return { k: 'soon', l: `${dl} ימים לסיום`, c: 'warn' };
+    return { k: 'active', l: 'פעילה', c: 'ok' };
+  }
+  function agreeStatus(a) {
+    const st = settings();
+    const dl = daysLeft(a.endDate);
+    if (a.cancelled) return { k: 'cancelled', l: 'בוטל', c: 'gray' };
+    if (dl != null && dl < 0) return { k: 'ended', l: 'הסתיים', c: 'gray' };
+    if (dl != null && dl <= st.alertDays) return { k: 'ending', l: 'מסתיים בקרוב', c: 'bad' };
+    if (dl != null && dl <= st.warnDays) return { k: 'soon', l: `${dl} ימים לסיום`, c: 'warn' };
+    return { k: 'active', l: 'בתוקף', c: 'ok' };
+  }
+  const isActiveOrder = (o) => ['active', 'soon', 'ending'].includes(orderStatus(o).k);
+  const isActiveAgree = (a) => ['active', 'soon', 'ending'].includes(agreeStatus(a).k);
+  const barCls = (p) => { const st = settings(); return p >= st.utilCritical ? 'bad' : p >= st.utilWarn ? 'warn' : ''; };
+  const bar = (p) => `<div class="bar ${barCls(p)}"><span style="width:${Math.min(100, p)}%"></span></div>`;
+
+  /* ---------------- התראות ---------------- */
+  function computeAlerts() {
+    const st = settings(); const out = [];
+    const snoozed = (k) => st.snoozed && st.snoozed[k] && st.snoozed[k] >= today();
+    S.orders.forEach((o) => {
+      if (!isActiveOrder(o)) return;
+      const dl = daysLeft(o.endDate);
+      if (dl != null && dl <= st.warnDays) out.push({ key: 'oe-' + o.id, level: dl <= st.alertDays ? 'bad' : 'warn', ic: '📄', bg: 'var(--c-orders-soft)',
+        title: `הזמנה ${o.orderNumber} מסתיימת`, sub: `${o.supplier || ''} · סיום ${dfmt(o.endDate)}`, days: dl, open: ['order', o.id] });
+      const p = pct(o.utilized || 0, o.budgetExVat);
+      if (p >= st.utilWarn) out.push({ key: 'ou-' + o.id + '-' + (p >= st.utilCritical ? 'c' : 'w'), level: p >= st.utilCritical ? 'bad' : 'warn', ic: '💰', bg: 'var(--c-warn-soft)',
+        title: `ניצול ${p}% בהזמנה ${o.orderNumber}`, sub: `נוצלו ${money(o.utilized)} מתוך ${money(o.budgetExVat)}`, days: null, pct: p, open: ['order', o.id] });
+    });
+    S.agreements.forEach((a) => {
+      if (!isActiveAgree(a)) return;
+      const dl = daysLeft(a.endDate);
+      if (dl != null && dl <= st.warnDays) out.push({ key: 'ae-' + a.id, level: dl <= st.alertDays ? 'bad' : 'warn', ic: '📑', bg: 'var(--c-agree-soft)',
+        title: `הסכם ${a.agreementNumber} מסתיים`, sub: `${a.name || ''} · ${a.contractor || ''}`, days: dl, open: ['agreement', a.id] });
+      const p = pct(a.utilized || 0, a.targetValue);
+      if (p >= st.utilWarn) out.push({ key: 'au-' + a.id + '-' + (p >= st.utilCritical ? 'c' : 'w'), level: p >= st.utilCritical ? 'bad' : 'warn', ic: '📊', bg: 'var(--c-warn-soft)',
+        title: `ניצול ${p}% מערך היעד`, sub: `${a.name || a.agreementNumber}`, days: null, pct: p, open: ['agreement', a.id] });
+    });
+    S.tasks.forEach((t) => {
+      if (t.status === 'done' || !t.dueDate) return;
+      const dl = daysLeft(t.dueDate);
+      if (dl < 0) out.push({ key: 'to-' + t.id, level: 'bad', ic: '⏰', bg: 'var(--c-tasks-soft)', title: `משימה באיחור: ${t.title}`, sub: `יעד ${dfmt(t.dueDate)} · ${t.assignee || ''}`, days: dl, open: ['task', t.id] });
+      else if (dl <= 1) out.push({ key: 'td-' + t.id, level: 'info', ic: '✅', bg: 'var(--c-tasks-soft)', title: `${dl === 0 ? 'היום' : 'מחר'}: ${t.title}`, sub: t.assignee || '', days: dl, open: ['task', t.id] });
+    });
+    const rank = { bad: 0, warn: 1, info: 2 };
+    return out.filter((a) => !snoozed(a.key)).sort((a, b) => rank[a.level] - rank[b.level] || (a.days ?? 999) - (b.days ?? 999));
+  }
+  function alertHTML(a) {
+    const days = a.days == null ? `<div class="days">${a.pct}%<small>ניצול</small></div>`
+      : a.days < 0 ? `<div class="days" style="color:var(--c-alert)">${Math.abs(a.days)}<small>ימי איחור</small></div>`
+        : `<div class="days">${a.days}<small>ימים</small></div>`;
+    return `<div class="alert ${a.level}" data-act="open" data-kind="${a.open[0]}" data-id="${a.open[1]}">
+      <div class="ic" style="background:${a.bg}">${a.ic}</div>
+      <div class="tx"><b>${esc(a.title)}</b><span>${esc(a.sub)}</span></div>${days}
+      <button class="btn sm ghost" data-act="snooze" data-key="${a.key}" title="השתק לשבוע">🔕</button></div>`;
+  }
+
+  /* ---------------- שלד ---------------- */
+  function shell(content, title, sub, actions = '') {
+    const alerts = computeAlerts();
+    const openTasks = S.tasks.filter((t) => t.status !== 'done').length;
+    const counts = { tasks: openTasks, dashboard: alerts.filter((a) => a.level === 'bad').length };
+    const u = DB.user;
+    return `<div class="app">
+      <aside class="sidebar">
+        <div class="brand"><div class="brand-logo">✦</div><div><b>מרכז שליטה</b><small>הזמנות · הסכמים · משימות</small></div></div>
+        <nav class="nav">${NAV.map((x) => `<a href="#${x.id}" class="${S.route === x.id ? 'active' : ''}" title="${x.label}">
+          <span class="dot" style="background:${x.color}"></span>${ICONS[x.id === 'config' ? 'settings' : x.id]}<span class="lbl">${x.label}</span>${counts[x.id] ? `<span class="count">${counts[x.id]}</span>` : ''}</a>`).join('')}</nav>
+        <div class="side-foot"><span class="mode">${DB.mode === 'demo' ? 'מצב הדגמה' : 'מחובר ל‑Firebase'}</span><br>${esc(u.name)} · ${u.role === 'commander' ? 'מפקד' : u.role === 'admin' ? 'מנהל' : 'רל"שית'}</div>
+      </aside>
+      <main class="main">
+        <div class="topbar">
+          <div><h1>${title}</h1>${sub ? `<div class="sub">${sub}</div>` : ''}</div>
+          <div class="spacer"></div>
+          ${actions}
+          <div class="search">${ICONS.search}<input id="gsearch" placeholder="חיפוש הזמנה, הסכם, ספק, משימה…" value="${esc(S.q)}" autocomplete="off"></div>
+          <button class="icon-btn" data-act="alerts" title="התראות">${ICONS.bell}${alerts.length ? `<span class="badge">${alerts.length}</span>` : ''}</button>
+          <div class="user-chip" data-act="user"><div class="avatar">${esc((u.name || '?').slice(0, 1))}</div><span class="nm">${esc(u.name)}</span></div>
+        </div>
+        <div id="search-results"></div>
+        ${content}
+      </main>
+      <nav class="bottom-nav">${['dashboard', 'orders', 'agreements', 'tasks', 'notes'].map((id) => { const x = NAV.find((y) => y.id === id);
+        return `<a href="#${id}" class="${S.route === id ? 'active' : ''}">${ICONS[id]}<span>${x.label.split(' ')[0]}</span>${counts[id] ? `<span class="count">${counts[id]}</span>` : ''}</a>`; }).join('')}</nav>
+      <button class="fab" data-act="fab">+</button>
+      <div class="fab-menu" id="fabmenu">
+        <button class="btn orange" data-act="quick-task">✅ משימה מהירה</button>
+        <button class="btn pink" data-act="quick-note">🗒️ פיתקית</button>
+        <button class="btn primary" data-act="new-order">📄 הזמנה חדשה</button>
+      </div>
+    </div>`;
+  }
+
+  /* ---------------- דשבורד ---------------- */
+  function viewDashboard() {
+    const st = settings();
+    const activeO = S.orders.filter(isActiveOrder);
+    const activeA = S.agreements.filter(isActiveAgree);
+    const open = S.tasks.filter((t) => t.status !== 'done');
+    const overdue = open.filter((t) => t.dueDate && daysLeft(t.dueDate) < 0);
+    const alerts = computeAlerts();
+    const budget = activeO.reduce((s, o) => s + (o.budgetExVat || 0), 0);
+    const used = activeO.reduce((s, o) => s + (o.utilized || 0), 0);
+    const target = activeA.reduce((s, a) => s + (a.targetValue || 0), 0);
+
+    // תחזית סיומים ל‑12 חודשים
+    const months = [];
+    for (let i = 0; i < 12; i++) { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + i); months.push({ key: d.toISOString().slice(0, 7), label: d.toLocaleDateString('he-IL', { month: 'short' }), o: 0, a: 0 }); }
+    activeO.forEach((o) => { const m = months.find((x) => x.key === (o.endDate || '').slice(0, 7)); if (m) m.o++; });
+    activeA.forEach((a) => { const m = months.find((x) => x.key === (a.endDate || '').slice(0, 7)); if (m) m.a++; });
+    const maxM = Math.max(1, ...months.map((m) => m.o + m.a));
+
+    const myTasks = open.slice().sort((a, b) => (a.dueDate || '9999').localeCompare(b.dueDate || '9999')).slice(0, 6);
+    const pinned = S.notes.filter((x) => x.pinned).slice(0, 4);
+
+    const content = `
+      <div class="grid kpis">
+        <div class="kpi orders" data-go="orders"><div class="lbl">הזמנות פעילות</div><div class="val">${activeO.length}</div><div class="meta">${money(budget)} לפני מע"מ</div></div>
+        <div class="kpi money" data-go="orders"><div class="lbl">ניצול תקציב הזמנות</div><div class="val">${pct(used, budget)}%</div><div class="meta">${money(used)} נוצלו</div></div>
+        <div class="kpi agree" data-go="agreements"><div class="lbl">הסכמים בתוקף</div><div class="val">${activeA.length}</div><div class="meta">ערך יעד ${money(target)}</div></div>
+        <div class="kpi tasks" data-go="tasks"><div class="lbl">משימות פתוחות</div><div class="val">${open.length}</div><div class="meta">${overdue.length ? `${overdue.length} באיחור` : 'אין איחורים'}</div></div>
+        <div class="kpi alerts" data-act="alerts"><div class="lbl">התראות</div><div class="val">${alerts.length}</div><div class="meta">${alerts.filter((a) => a.level === 'bad').length} דחופות · ${st.alertDays} ימים מראש</div></div>
+      </div>
+      <div class="grid dash-2">
+        <div class="card"><div class="card-h"><span class="tag" style="background:var(--c-alert)"></span><h2>לוח התראות</h2><div class="spacer"></div><span class="sub" style="color:var(--muted);font-size:12.5px">אדום ≤ ${st.alertDays} ימים · כתום ≤ ${st.warnDays}</span></div>
+          <div class="alerts">${alerts.length ? alerts.map(alertHTML).join('') : '<div class="empty">🎉 אין התראות פתוחות</div>'}</div></div>
+        <div class="card"><div class="card-h"><span class="tag" style="background:var(--c-tasks)"></span><h2>משימות קרובות</h2><div class="spacer"></div><button class="btn sm orange" data-act="quick-task">+ משימה</button></div>
+          ${myTasks.length ? myTasks.map(taskCard).join('') : '<div class="empty">אין משימות פתוחות</div>'}</div>
+      </div>
+      <div class="grid dash-2">
+        <div class="card"><div class="card-h"><span class="tag" style="background:var(--c-report)"></span><h2>תחזית סיומים — 12 חודשים</h2></div>
+          <div style="display:flex;align-items:flex-end;gap:8px;height:170px;padding-top:10px">
+            ${months.map((m) => `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end" title="${m.o} הזמנות, ${m.a} הסכמים">
+              <small style="font-weight:700">${m.o + m.a || ''}</small>
+              <div style="width:100%;max-width:34px;display:flex;flex-direction:column;border-radius:8px;overflow:hidden;height:${((m.o + m.a) / maxM) * 120}px">
+                <div style="flex:${m.a};background:var(--c-agree)"></div><div style="flex:${m.o};background:var(--c-orders)"></div></div>
+              <small style="color:var(--muted);font-size:11px">${m.label}</small></div>`).join('')}
+          </div>
+          <div style="display:flex;gap:14px;font-size:12.5px;color:var(--muted);margin-top:8px"><span>■ <b style="color:var(--c-orders)">הזמנות</b></span><span>■ <b style="color:var(--c-agree)">הסכמים</b></span></div>
+        </div>
+        <div class="card"><div class="card-h"><span class="tag" style="background:var(--c-agree)"></span><h2>ניצול הסכמים</h2></div>
+          ${activeA.length ? activeA.map((a) => { const p = pct(a.utilized || 0, a.targetValue); return `<div style="margin-bottom:12px;cursor:pointer" data-act="open" data-kind="agreement" data-id="${a.id}">
+            <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:5px"><b>${esc(a.name || a.agreementNumber)}</b><span>${p}%</span></div>${bar(p)}
+            <div style="font-size:12px;color:var(--muted);margin-top:3px">${money(a.utilized)} מתוך ${money(a.targetValue)} · עד ${dfmt(a.endDate)}</div></div>`; }).join('') : '<div class="empty">אין הסכמים פעילים</div>'}
+        </div>
+      </div>
+      <div class="grid dash-2">
+        <div class="card"><div class="card-h"><span class="tag" style="background:var(--c-orders)"></span><h2>הזמנות פעילות — ניצול</h2><div class="spacer"></div><a href="#orders" style="font-size:13px">לכל ההזמנות ←</a></div>
+          ${activeO.length ? activeO.sort((a, b) => (a.endDate || '').localeCompare(b.endDate || '')).slice(0, 6).map((o) => { const p = pct(o.utilized || 0, o.budgetExVat); const s = orderStatus(o);
+            return `<div style="margin-bottom:12px;cursor:pointer" data-act="open" data-kind="order" data-id="${o.id}">
+            <div style="display:flex;justify-content:space-between;gap:8px;font-size:14px;margin-bottom:5px"><span><b>${esc(o.orderNumber)}</b> · ${esc(o.supplier || '')}</span><span class="pill ${s.c}">${s.l}</span></div>${bar(p)}
+            <div style="font-size:12px;color:var(--muted);margin-top:3px">${p}% · ${money(o.utilized)} מתוך ${money(o.budgetExVat)}</div></div>`; }).join('') : '<div class="empty">אין הזמנות פעילות</div>'}
+        </div>
+        <div class="card"><div class="card-h"><span class="tag" style="background:var(--c-notes)"></span><h2>פיתקיות מוצמדות ופעילות אחרונה</h2></div>
+          ${pinned.length ? `<div class="notes-board" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr));margin-bottom:14px">${pinned.map((x) => `<div class="sticky s-${x.color || 'yellow'}" style="min-height:90px;--rot:0deg"><div class="txt" style="font-size:14px">${esc(x.text)}</div></div>`).join('')}</div>` : ''}
+          ${S.activity.slice().sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '')).slice(0, 7).map((x) => `<div style="display:flex;gap:8px;font-size:13.5px;padding:6px 0;border-bottom:1px solid var(--border)">
+            <b>${esc(x.user)}</b><span style="flex:1">${esc(x.action)} ${esc(x.label || '')}</span><span style="color:var(--muted);font-size:12px">${dfmt((x.createdAt || '').slice(0, 10))}</span></div>`).join('') || '<div class="empty" style="padding:16px">עדיין אין פעילות</div>'}
+        </div>
+      </div>`;
+    const h = new Date().getHours();
+    return shell(content, `${h < 12 ? 'בוקר טוב' : h < 18 ? 'צהריים טובים' : 'ערב טוב'}, ${esc(DB.user.name)}`, new Date().toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
+      `<button class="btn violet" data-act="report-quick">⬇ דוח מהיר</button>`);
+  }
+
+  /* ---------------- טבלה כללית עם מיון ---------------- */
+  function sortRows(rows, key, cols) {
+    const s = S.f.sort[key]; if (!s) return rows;
+    const col = cols.find((c) => c.k === s.k); if (!col) return rows;
+    const get = col.sv || ((r) => r[col.k]);
+    return rows.slice().sort((a, b) => { const x = get(a), y = get(b); const r = typeof x === 'number' && typeof y === 'number' ? x - y : String(x ?? '').localeCompare(String(y ?? ''), 'he'); return s.dir * r; });
+  }
+  function table(key, cols, rows, kind) {
+    const s = S.f.sort[key] || {};
+    return `<div class="card table-wrap responsive"><table class="tbl"><thead><tr>${cols.map((c) => `<th data-act="sort" data-key="${key}" data-k="${c.k}">${c.l}${s.k === c.k ? (s.dir > 0 ? ' ▲' : ' ▼') : ''}</th>`).join('')}</tr></thead>
+      <tbody>${rows.length ? rows.map((r) => `<tr data-act="open" data-kind="${kind}" data-id="${r.id}">${cols.map((c) => `<td class="${c.cls || ''}">${c.v(r)}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${cols.length}" class="empty">לא נמצאו רשומות</td></tr>`}</tbody></table></div>`;
+  }
+  const match = (obj, q) => !q || JSON.stringify(obj).toLowerCase().includes(q.toLowerCase());
+
+  /* ---------------- הזמנות ---------------- */
+  const ORDER_COLS = [
+    { k: 'orderNumber', l: 'מס׳ הזמנה', cls: 'strong', v: (o) => `${esc(o.orderNumber)}${o.version ? `<div class="sub">גרסה ${esc(o.version)}</div>` : ''}` },
+    { k: 'demandNumber', l: 'מס׳ דרישה', v: (o) => esc(o.demandNumber || '—') },
+    { k: 'supplier', l: 'ספק', v: (o) => `${esc(o.supplier || '—')}<div class="sub">${esc(o.description || '')}</div>` },
+    { k: 'demandBudget', l: 'תקציב בדרישה', cls: 'num', v: (o) => money(o.demandBudget) },
+    { k: 'budgetExVat', l: 'תקציב בהזמנה', cls: 'num', v: (o) => `${money(o.budgetExVat)}<div class="sub">כולל מע"מ ${money(o.budgetTotal)}</div>` },
+    { k: 'utilized', l: 'ניצול', sv: (o) => pct(o.utilized || 0, o.budgetExVat), v: (o) => { const p = pct(o.utilized || 0, o.budgetExVat); return `${bar(p)}<div class="sub">${p}%</div>`; } },
+    { k: 'startDate', l: 'תחילה', cls: 'num', v: (o) => dfmt(o.startDate) },
+    { k: 'endDate', l: 'סיום', cls: 'num', v: (o) => dfmt(o.endDate) },
+    { k: 'status', l: 'סטטוס', sv: (o) => orderStatus(o).l, v: (o) => { const s = orderStatus(o); return `<span class="pill ${s.c}">${s.l}</span>${o.linkedTo ? '<div class="sub">🔗 הזמנת המשך</div>' : o.parentId ? '<div class="sub">↩ המשך להזמנה קודמת</div>' : ''}`; } },
+  ];
+  function viewOrders() {
+    const fs = S.f.orderStatus;
+    let rows = S.orders.filter((o) => match(o, S.q)).filter((o) => { const k = orderStatus(o).k;
+      return fs === 'all' || (fs === 'active' && ['active', 'soon', 'ending'].includes(k)) || (fs === 'ending' && ['soon', 'ending'].includes(k)) || (fs === 'closed' && ['ended', 'linked', 'cancelled'].includes(k)); });
+    rows = sortRows(rows.sort((a, b) => (a.endDate || '').localeCompare(b.endDate || '')), 'orders', ORDER_COLS);
+    const chips = [['all', 'הכל'], ['active', 'פעילות'], ['ending', 'מסתיימות בקרוב'], ['closed', 'סגורות / הועברו']];
+    const totB = rows.reduce((s, o) => s + (o.budgetExVat || 0), 0);
+    const content = `
+      <div class="dropzone" id="dz"><div style="font-size:28px">📥</div><b>גרור לכאן קובץ PDF של הזמנת עבודה</b> או לחץ לבחירת קובץ
+        <div class="hint">הנתונים יחולצו אוטומטית (מס׳ הזמנה, דרישה, ספק, תקציב, תאריכים, יועצים) ותוכל לבדוק לפני שמירה</div>
+        <input type="file" id="dzfile" accept="application/pdf" hidden></div>
+      <div class="toolbar"><div class="chips">${chips.map(([k, l]) => `<span class="chip ${fs === k ? 'on' : ''}" data-act="f" data-f="orderStatus" data-v="${k}">${l}</span>`).join('')}</div>
+        <div class="spacer"></div><span style="color:var(--muted);font-size:13.5px">${rows.length} הזמנות · ${money(totB)}</span></div>
+      ${table('orders', ORDER_COLS, rows, 'order')}
+      <div class="mcards">${rows.map((o) => { const s = orderStatus(o); const p = pct(o.utilized || 0, o.budgetExVat); return `<div class="mcard" data-act="open" data-kind="order" data-id="${o.id}">
+        <div class="row"><span class="t">${esc(o.orderNumber)}</span><span class="pill ${s.c}">${s.l}</span></div>
+        <div class="m">${esc(o.supplier || '')} · דרישה ${esc(o.demandNumber || '—')}</div>
+        <div class="m">${money(o.budgetExVat)} · ${dfmt(o.startDate)} – ${dfmt(o.endDate)}</div><div style="margin-top:8px">${bar(p)}</div></div>`; }).join('') || '<div class="empty">לא נמצאו הזמנות</div>'}</div>`;
+    return shell(content, 'הזמנות עבודה', 'מעקב תקציב, תוקף, הגדלות, הארכות והזמנות המשך', `<button class="btn primary" data-act="new-order">+ הזמנה חדשה</button>`);
+  }
+
+  function orderForm(o = {}, found = []) {
+    const f = (k, l, type = 'text', extra = '') => `<div class="field ${found.includes(k) ? 'found' : ''} ${extra}"><label>${l}${found.includes(k) ? ' ✓' : ''}</label>
+      <input name="${k}" type="${type}" ${type === 'number' ? 'step="0.01"' : ''} value="${esc(o[k] ?? '')}"></div>`;
+    const cons = o.consultants && o.consultants.length ? o.consultants : [];
+    const parentSel = `<div class="field full"><label>המשך להזמנה קודמת (אופציונלי)</label><select name="parentId"><option value="">— ללא —</option>
+      ${S.orders.filter((x) => x.id !== o.id).map((x) => `<option value="${x.id}" ${o.parentId === x.id ? 'selected' : ''}>${esc(x.orderNumber)} · ${esc(x.supplier || '')}</option>`).join('')}</select></div>`;
+    return `<form id="orderForm"><div class="form-grid">
+      ${f('orderNumber', 'מספר הזמנה')}${f('version', 'גרסה')}
+      ${f('demandNumber', 'מספר דרישה')}${f('supplier', 'שם הספק')}
+      ${f('description', 'תיאור ההזמנה', 'text', 'full')}
+      ${f('unit', 'יחידה / איש קשר')}${f('buyer', 'קבוצת רכש')}
+      ${f('demandBudget', 'סה"כ תקציב בדרישה (₪)', 'number')}${f('budgetExVat', 'תקציב בהזמנה ללא מע"מ (₪)', 'number')}
+      ${f('vat', 'מע"מ (₪)', 'number')}${f('budgetTotal', 'סה"כ כולל מע"מ (₪)', 'number')}
+      ${f('utilized', 'נוצל עד כה (₪, ללא מע"מ)', 'number')}${f('method', 'שיטת התקשרות')}
+      ${f('startDate', 'תחילת תוקף', 'date')}${f('endDate', 'סוף תוקף', 'date')}
+      ${parentSel}
+      <div class="field full"><label>יועצים / נותני שירות</label>
+        <div id="consRows">${cons.map(consRow).join('')}</div>
+        <button type="button" class="btn sm" data-act="add-cons" style="margin-top:6px;align-self:flex-start">+ יועץ</button></div>
+      <div class="field full"><label>הערות</label><textarea name="notes">${esc(o.notes || '')}</textarea></div>
+    </div></form>`;
+  }
+  function consRow(c = {}) {
+    return `<div class="cons-row" style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;margin-bottom:6px">
+      <input placeholder="שם" data-c="name" value="${esc(c.name || '')}" class="ci"><input placeholder="שעות" type="number" data-c="hours" value="${esc(c.hours ?? '')}" class="ci">
+      <input placeholder="תעריף לשעה" type="number" data-c="rate" value="${esc(c.rate ?? '')}" class="ci"><button type="button" class="btn sm danger" data-act="rm-cons">✕</button></div>`;
+  }
+  function readForm(form) {
+    const d = {};
+    $$('input[name],select[name],textarea[name]', form).forEach((el) => { d[el.name] = el.type === 'number' ? n(el.value) : el.value.trim(); });
+    return d;
+  }
+  function openOrderEditor(o = {}, found = [], banner = '') {
+    const isNew = !o.id;
+    modal(`${isNew ? 'הזמנה חדשה' : 'עריכת הזמנה ' + esc(o.orderNumber)}`, `${banner}${orderForm(o, found)}`,
+      `<button class="btn primary" data-act="save-order">שמירה</button><button class="btn" data-act="close">ביטול</button>`, 'wide');
+    const form = $('#orderForm');
+    form.addEventListener('input', (e) => {
+      if (e.target.name === 'budgetExVat') {
+        const v = n(e.target.value) || 0; form.vat.value = (v * VAT).toFixed(2); form.budgetTotal.value = (v * (1 + VAT)).toFixed(2);
+      }
+    });
+    S._editing = { col: 'orders', id: o.id || null, prev: o };
+  }
+  async function saveOrder() {
+    const form = $('#orderForm'); const d = readForm(form);
+    d.consultants = $$('.cons-row', form).map((r) => { const c = {}; $$('.ci', r).forEach((i) => { c[i.dataset.c] = i.type === 'number' ? n(i.value) : i.value.trim(); }); c.total = c.hours && c.rate ? c.hours * c.rate : null; return c; }).filter((c) => c.name);
+    if (!d.orderNumber) return toast('חובה למלא מספר הזמנה', 'error');
+    const dup = S.orders.find((x) => x.orderNumber === d.orderNumber && x.id !== S._editing.id && String(x.version) === String(d.version));
+    if (dup && !(await ask(`הזמנה ${d.orderNumber} בגרסה זו כבר קיימת. לשמור בכל זאת?`))) return;
+    const ed = S._editing;
+    if (ed.id) {
+      await DB.update('orders', ed.id, d); DB.log('עדכן/ה הזמנה', 'order', d.orderNumber);
+    } else {
+      d.history = [{ type: 'create', date: today(), note: ed.prev._fromPdf ? 'נקלט מקובץ PDF' : 'נוצרה ידנית' }];
+      const id = await DB.add('orders', d); DB.log('הוסיף/ה הזמנה', 'order', d.orderNumber);
+      if (d.parentId) {
+        const p = byId('orders', d.parentId);
+        if (p) await DB.update('orders', p.id, { linkedTo: id, history: [...(p.history || []), { type: 'link', date: today(), note: `הועברה להזמנת המשך ${d.orderNumber}` }] });
+      }
+    }
+    closeModal(); toast('ההזמנה נשמרה', 'ok');
+  }
+
+  function historyHTML(h = []) {
+    const L = { create: 'נוצרה', increase: 'הגדלה', decrease: 'הפחתה', extend: 'הארכת תוקף', version: 'גרסה חדשה', link: 'קישור להמשך', note: 'הערה' };
+    return h.length ? `<div class="timeline">${h.slice().reverse().map((x) => `<div class="tl-item ${x.type}"><div><b>${L[x.type] || x.type}</b>
+      ${x.amount ? ` · ${x.type === 'decrease' ? '−' : '+'}${money(x.amount)}` : ''}${x.newEnd ? ` · עד ${dfmt(x.newEnd)}` : ''}${x.version != null ? ` · גרסה ${esc(x.version)}` : ''}</div>
+      ${x.note ? `<div>${esc(x.note)}</div>` : ''}<div class="d">${dfmt(x.date)}${x.by ? ' · ' + esc(x.by) : ''}</div></div>`).join('')}</div>` : '<div class="empty" style="padding:12px">אין שינויים</div>';
+  }
+  function chain(o) {
+    const list = []; let cur = o; const seen = new Set();
+    while (cur && cur.parentId && !seen.has(cur.parentId)) { seen.add(cur.parentId); cur = byId('orders', cur.parentId); if (cur) list.unshift(cur); }
+    list.push(o); cur = o;
+    while (cur && cur.linkedTo && !seen.has(cur.linkedTo)) { seen.add(cur.linkedTo); cur = byId('orders', cur.linkedTo); if (cur) list.push(cur); }
+    return list;
+  }
+  function openOrder(id) {
+    const o = byId('orders', id); if (!o) return;
+    const s = orderStatus(o); const p = pct(o.utilized || 0, o.budgetExVat); const dl = daysLeft(o.endDate);
+    const ch = chain(o);
+    const tasks = S.tasks.filter((t) => t.linkOrder === id);
+    const info = (l, v) => `<div class="info"><small>${l}</small><b>${v}</b></div>`;
+    const body = `
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap"><span class="pill ${s.c}">${s.l}</span>
+        ${dl != null && dl >= 0 && !o.linkedTo && s.k !== 'soon' ? `<span class="pill gray">${dl} ימים לסיום</span>` : ''}<span style="color:var(--muted)">${esc(o.description || '')}</span></div>
+      <div class="info-grid">
+        ${info('מספר דרישה', esc(o.demandNumber || '—'))}${info('ספק', esc(o.supplier || '—'))}${info('יחידה / קבוצת רכש', esc([o.unit, o.buyer].filter(Boolean).join(' · ') || '—'))}
+        ${info('תקציב בדרישה', money(o.demandBudget))}${info('תקציב בהזמנה (ללא מע"מ)', money(o.budgetExVat))}${info('כולל מע"מ', money(o.budgetTotal))}
+        ${info('תחילת תוקף', dfmt(o.startDate))}${info('סוף תוקף', dfmt(o.endDate))}${info('יתרה לניצול', money((o.budgetExVat || 0) - (o.utilized || 0)))}
+      </div>
+      <div class="section-t">💰 ניצול תקציב <span style="margin-inline-start:auto;font-weight:500">${p}% · ${money(o.utilized)}</span></div>${bar(p)}
+      ${o.consultants && o.consultants.length ? `<div class="section-t">👷 יועצים / נותני שירות</div><table class="tbl"><thead><tr><th>שם</th><th>שעות</th><th>תעריף</th><th>סה"כ</th></tr></thead><tbody>
+        ${o.consultants.map((c) => `<tr><td>${esc(c.name)}</td><td class="num">${numFmt(c.hours)}</td><td class="num">${money(c.rate)}</td><td class="num">${money(c.total)}</td></tr>`).join('')}</tbody></table>` : ''}
+      ${ch.length > 1 ? `<div class="section-t">🔗 שרשרת הזמנות</div><div class="chips">${ch.map((x) => `<span class="chip ${x.id === id ? 'on' : ''}" data-act="open" data-kind="order" data-id="${x.id}">${esc(x.orderNumber)} (${dfmt(x.startDate)}–${dfmt(x.endDate)})</span>`).join(' ← ')}</div>` : ''}
+      <div class="section-t">🕓 היסטוריית שינויים</div>${historyHTML(o.history)}
+      <div class="section-t">✅ משימות קשורות <button class="btn sm orange" data-act="task-for" data-kind="order" data-id="${id}" style="margin-inline-start:auto">+ משימה</button></div>
+      ${tasks.length ? tasks.map(taskCard).join('') : '<div class="empty" style="padding:12px">אין משימות</div>'}
+      ${o.notes ? `<div class="section-t">📝 הערות</div><div style="white-space:pre-wrap">${esc(o.notes)}</div>` : ''}`;
+    modal(`הזמנה ${esc(o.orderNumber)}${o.version ? ` · גרסה ${esc(o.version)}` : ''}`, body, `
+      <button class="btn primary" data-act="edit-order" data-id="${id}">✏️ עריכה</button>
+      <button class="btn" data-act="change" data-col="orders" data-type="increase" data-id="${id}">⬆ הגדלה</button>
+      <button class="btn" data-act="change" data-col="orders" data-type="decrease" data-id="${id}">⬇ הפחתה</button>
+      <button class="btn" data-act="change" data-col="orders" data-type="extend" data-id="${id}">📅 הארכה</button>
+      <button class="btn" data-act="change" data-col="orders" data-type="utilize" data-id="${id}">💳 עדכון ניצול</button>
+      <button class="btn" data-act="change" data-col="orders" data-type="version" data-id="${id}">🔢 גרסה</button>
+      ${!o.linkedTo ? `<button class="btn violet" data-act="link-order" data-id="${id}">🔗 הזמנת המשך</button>` : ''}
+      <div class="spacer"></div><button class="btn danger" data-act="del" data-col="orders" data-id="${id}">מחיקה</button>`, 'wide');
+  }
+
+  /* שינוי: הגדלה / הפחתה / הארכה / ניצול / גרסה — להזמנות ולהסכמים */
+  function openChange(col, id, type) {
+    const r = byId(col, id); const isO = col === 'orders';
+    const T = { increase: 'הגדלת תקציב', decrease: 'הפחתת תקציב', extend: 'הארכת תוקף', utilize: 'עדכון ניצול', version: 'עדכון גרסה' };
+    let fields = '';
+    if (type === 'increase' || type === 'decrease') fields = `<div class="field"><label>סכום ${type === 'increase' ? 'ההגדלה' : 'ההפחתה'} (₪${isO ? ', ללא מע"מ' : ''})</label><input name="amount" type="number" step="0.01" required></div>`;
+    if (type === 'extend') fields = `<div class="field"><label>תאריך סיום חדש</label><input name="newEnd" type="date" value="${esc(r.endDate || '')}"></div>`;
+    if (type === 'utilize') fields = `<div class="field"><label>סך הכל נוצל עד היום (₪)</label><input name="utilized" type="number" step="0.01" value="${esc(r.utilized ?? '')}"></div>`;
+    if (type === 'version') fields = `<div class="field"><label>מספר גרסה חדש</label><input name="version" value="${esc((Number(r.version) || 0) + 1)}"></div>`;
+    modal(T[type], `<form id="chgForm"><div class="form-grid">${fields}<div class="field"><label>תאריך</label><input name="date" type="date" value="${today()}"></div>
+      <div class="field full"><label>הערה / סימוכין</label><textarea name="note" placeholder="למשל: אישור ועדה מס׳…"></textarea></div></div></form>`,
+      `<button class="btn primary" data-act="save-change" data-col="${col}" data-id="${id}" data-type="${type}">שמירה</button><button class="btn" data-act="close">ביטול</button>`);
+  }
+  async function saveChange(col, id, type) {
+    const r = byId(col, id); const d = readForm($('#chgForm'));
+    const patch = {}; const h = { type, date: d.date || today(), note: d.note, by: DB.user.name };
+    const budgetKey = col === 'orders' ? 'budgetExVat' : 'targetValue';
+    if (type === 'increase' || type === 'decrease') {
+      if (!d.amount) return toast('יש להזין סכום', 'error');
+      const nv = (r[budgetKey] || 0) + (type === 'increase' ? d.amount : -d.amount);
+      patch[budgetKey] = nv; h.amount = d.amount;
+      if (col === 'orders') { patch.vat = +(nv * VAT).toFixed(2); patch.budgetTotal = +(nv * (1 + VAT)).toFixed(2); }
+    }
+    if (type === 'extend') { if (!d.newEnd) return toast('יש לבחור תאריך', 'error'); patch.endDate = d.newEnd; h.newEnd = d.newEnd; }
+    if (type === 'utilize') { patch.utilized = d.utilized || 0; h.type = 'note'; h.note = `ניצול עודכן ל‑${money(d.utilized)}${d.note ? ' · ' + d.note : ''}`; }
+    if (type === 'version') { patch.version = d.version; h.version = d.version; }
+    patch.history = [...(r.history || []), h];
+    await DB.update(col, id, patch);
+    DB.log(({ increase: 'הגדיל/ה', decrease: 'הפחית/ה', extend: 'האריך/ה', utilize: 'עדכן/ה ניצול', version: 'עדכן/ה גרסה' })[type], col, r.orderNumber || r.agreementNumber);
+    toast('עודכן', 'ok');
+    col === 'orders' ? openOrder(id) : openAgreement(id);
+  }
+  function openLinkOrder(id) {
+    const o = byId('orders', id);
+    modal('קישור להזמנת המשך', `<p>בחר הזמנה קיימת שממשיכה את <b>${esc(o.orderNumber)}</b>, או צור הזמנה חדשה עם הנתונים הקבועים (ספק, דרישה, תיאור).</p>
+      <div class="field"><label>הזמנה קיימת</label><select id="linkSel"><option value="">— בחר —</option>${S.orders.filter((x) => x.id !== id && !x.parentId).map((x) => `<option value="${x.id}">${esc(x.orderNumber)} · ${esc(x.supplier || '')}</option>`).join('')}</select></div>`,
+      `<button class="btn primary" data-act="do-link" data-id="${id}">קשר להזמנה שנבחרה</button><button class="btn violet" data-act="link-new" data-id="${id}">צור הזמנה חדשה מקושרת</button><button class="btn" data-act="close">ביטול</button>`);
+  }
+
+  /* ---------------- הסכמים ---------------- */
+  const AGREE_COLS = [
+    { k: 'agreementNumber', l: 'מס׳ הסכם', cls: 'strong', v: (a) => esc(a.agreementNumber || '—') },
+    { k: 'demandNumber', l: 'מס׳ דרישה', v: (a) => esc(a.demandNumber || '—') },
+    { k: 'name', l: 'שם ההסכם', v: (a) => esc(a.name || '—') },
+    { k: 'contractor', l: 'קבלן', v: (a) => esc(a.contractor || '—') },
+    { k: 'targetValue', l: 'ערך יעד', cls: 'num', v: (a) => money(a.targetValue) },
+    { k: 'utilized', l: 'ניצול', sv: (a) => pct(a.utilized || 0, a.targetValue), v: (a) => { const p = pct(a.utilized || 0, a.targetValue); return `${bar(p)}<div class="sub">${p}% · ${money(a.utilized)}</div>`; } },
+    { k: 'startDate', l: 'תחילה', cls: 'num', v: (a) => dfmt(a.startDate) },
+    { k: 'endDate', l: 'סיום', cls: 'num', v: (a) => dfmt(a.endDate) },
+    { k: 'status', l: 'סטטוס', sv: (a) => agreeStatus(a).l, v: (a) => { const s = agreeStatus(a); return `<span class="pill ${s.c}">${s.l}</span>`; } },
+  ];
+  function viewAgreements() {
+    const fs = S.f.agreeStatus;
+    let rows = S.agreements.filter((a) => match(a, S.q)).filter((a) => { const k = agreeStatus(a).k;
+      return fs === 'all' || (fs === 'active' && ['active', 'soon', 'ending'].includes(k)) || (fs === 'ending' && ['soon', 'ending'].includes(k)) || (fs === 'closed' && ['ended', 'cancelled'].includes(k)); });
+    rows = sortRows(rows.sort((a, b) => (a.endDate || '').localeCompare(b.endDate || '')), 'agreements', AGREE_COLS);
+    const chips = [['all', 'הכל'], ['active', 'בתוקף'], ['ending', 'מסתיימים בקרוב'], ['closed', 'הסתיימו']];
+    const content = `<div class="toolbar"><div class="chips">${chips.map(([k, l]) => `<span class="chip ${fs === k ? 'on' : ''}" data-act="f" data-f="agreeStatus" data-v="${k}">${l}</span>`).join('')}</div>
+      <div class="spacer"></div><span style="color:var(--muted);font-size:13.5px">${rows.length} הסכמים · ערך יעד ${money(rows.reduce((s, a) => s + (a.targetValue || 0), 0))}</span></div>
+      ${table('agreements', AGREE_COLS, rows, 'agreement')}
+      <div class="mcards">${rows.map((a) => { const s = agreeStatus(a); const p = pct(a.utilized || 0, a.targetValue); return `<div class="mcard" style="border-color:var(--c-agree)" data-act="open" data-kind="agreement" data-id="${a.id}">
+        <div class="row"><span class="t">${esc(a.name || a.agreementNumber)}</span><span class="pill ${s.c}">${s.l}</span></div>
+        <div class="m">${esc(a.agreementNumber || '')} · ${esc(a.contractor || '')}</div><div class="m">${money(a.targetValue)} · עד ${dfmt(a.endDate)}</div><div style="margin-top:8px">${bar(p)}</div></div>`; }).join('') || '<div class="empty">לא נמצאו הסכמים</div>'}</div>`;
+    return shell(content, 'הסכמי מחירים וחוזים', 'ערך יעד, ניצול ותוקף', `<button class="btn teal" data-act="new-agreement">+ הסכם חדש</button>`);
+  }
+  function openAgreementEditor(a = {}) {
+    const f = (k, l, type = 'text', extra = '') => `<div class="field ${extra}"><label>${l}</label><input name="${k}" type="${type}" ${type === 'number' ? 'step="0.01"' : ''} value="${esc(a[k] ?? '')}"></div>`;
+    modal(a.id ? 'עריכת הסכם' : 'הסכם / חוזה חדש', `<form id="agreeForm"><div class="form-grid">
+      ${f('agreementNumber', 'מספר הסכם')}${f('demandNumber', 'מספר דרישה')}
+      ${f('name', 'שם ההסכם', 'text', 'full')}${f('contractor', 'קבלן')}
+      <div class="field"><label>סוג</label><select name="kind">${['הסכם מחירים', 'חוזה', 'הסכם מסגרת'].map((k) => `<option ${a.kind === k ? 'selected' : ''}>${k}</option>`).join('')}</select></div>
+      ${f('targetValue', 'ערך יעד (₪)', 'number')}${f('utilized', 'נוצל עד כה (₪)', 'number')}
+      ${f('startDate', 'תחילת תוקף', 'date')}${f('endDate', 'סוף תוקף', 'date')}
+      <div class="field full"><label>הערות</label><textarea name="notes">${esc(a.notes || '')}</textarea></div></div></form>`,
+      `<button class="btn teal" data-act="save-agreement">שמירה</button><button class="btn" data-act="close">ביטול</button>`, 'wide');
+    S._editing = { col: 'agreements', id: a.id || null };
+  }
+  async function saveAgreement() {
+    const d = readForm($('#agreeForm'));
+    if (!d.agreementNumber && !d.name) return toast('יש למלא מספר או שם הסכם', 'error');
+    if (S._editing.id) { await DB.update('agreements', S._editing.id, d); DB.log('עדכן/ה הסכם', 'agreement', d.agreementNumber || d.name); }
+    else { d.history = [{ type: 'create', date: today() }]; await DB.add('agreements', d); DB.log('הוסיף/ה הסכם', 'agreement', d.agreementNumber || d.name); }
+    closeModal(); toast('ההסכם נשמר', 'ok');
+  }
+  function openAgreement(id) {
+    const a = byId('agreements', id); if (!a) return;
+    const s = agreeStatus(a); const p = pct(a.utilized || 0, a.targetValue);
+    const tasks = S.tasks.filter((t) => t.linkAgreement === id);
+    const info = (l, v) => `<div class="info"><small>${l}</small><b>${v}</b></div>`;
+    modal(`${esc(a.name || 'הסכם')} · ${esc(a.agreementNumber || '')}`, `
+      <div style="margin-bottom:14px"><span class="pill ${s.c}">${s.l}</span> <span class="pill gray">${esc(a.kind || 'הסכם')}</span></div>
+      <div class="info-grid">${info('מספר הסכם', esc(a.agreementNumber || '—'))}${info('מספר דרישה', esc(a.demandNumber || '—'))}${info('קבלן', esc(a.contractor || '—'))}
+        ${info('ערך יעד', money(a.targetValue))}${info('נוצל', money(a.utilized))}${info('יתרה', money((a.targetValue || 0) - (a.utilized || 0)))}
+        ${info('תחילת תוקף', dfmt(a.startDate))}${info('סוף תוקף', dfmt(a.endDate))}${info('ימים לסיום', daysLeft(a.endDate) ?? '—')}</div>
+      <div class="section-t">📊 ניצול מערך היעד <span style="margin-inline-start:auto;font-weight:500">${p}%</span></div>${bar(p)}
+      <div class="section-t">🕓 היסטוריית שינויים</div>${historyHTML(a.history)}
+      <div class="section-t">✅ משימות קשורות <button class="btn sm orange" data-act="task-for" data-kind="agreement" data-id="${id}" style="margin-inline-start:auto">+ משימה</button></div>
+      ${tasks.length ? tasks.map(taskCard).join('') : '<div class="empty" style="padding:12px">אין משימות</div>'}
+      ${a.notes ? `<div class="section-t">📝 הערות</div><div style="white-space:pre-wrap">${esc(a.notes)}</div>` : ''}`, `
+      <button class="btn teal" data-act="edit-agreement" data-id="${id}">✏️ עריכה</button>
+      <button class="btn" data-act="change" data-col="agreements" data-type="increase" data-id="${id}">⬆ הגדלת ערך יעד</button>
+      <button class="btn" data-act="change" data-col="agreements" data-type="decrease" data-id="${id}">⬇ הפחתה</button>
+      <button class="btn" data-act="change" data-col="agreements" data-type="extend" data-id="${id}">📅 הארכה</button>
+      <button class="btn" data-act="change" data-col="agreements" data-type="utilize" data-id="${id}">💳 עדכון ניצול</button>
+      <div class="spacer"></div><button class="btn danger" data-act="del" data-col="agreements" data-id="${id}">מחיקה</button>`, 'wide');
+  }
+
+  /* ---------------- משימות ---------------- */
+  function taskCard(t) {
+    const dl = t.dueDate ? daysLeft(t.dueDate) : null; const overdue = t.status !== 'done' && dl != null && dl < 0;
+    const P = PRIORITY[t.priority] || PRIORITY.normal;
+    const due = t.dueDate ? (dl === 0 ? 'היום' : dl === 1 ? 'מחר' : dfmt(t.dueDate)) : '';
+    const link = t.linkOrder ? `📄 ${esc((byId('orders', t.linkOrder) || {}).orderNumber || '')}` : t.linkAgreement ? `📑 ${esc((byId('agreements', t.linkAgreement) || {}).agreementNumber || '')}` : '';
+    return `<div class="task p-${t.priority || 'normal'} ${overdue ? 'overdue' : ''}" draggable="true" data-task="${t.id}" data-act="open" data-kind="task" data-id="${t.id}"
+      style="${t.status === 'done' ? 'opacity:.6' : ''}"><div class="t">${t.status === 'done' ? '✔ ' : ''}${esc(t.title)}</div>
+      <div class="m"><span class="pill ${P.c}">${P.l}</span>${due ? `<span class="due">📅 ${due}</span>` : ''}${t.assignee ? `<span>👤 ${esc(t.assignee)}</span>` : ''}
+      ${link ? `<span>${link}</span>` : ''}${(t.comments || []).length ? `<span>💬 ${t.comments.length}</span>` : ''}</div></div>`;
+  }
+  function viewTasks() {
+    const F = S.f;
+    const assignees = [...new Set(S.tasks.map((t) => t.assignee).filter(Boolean))];
+    const rows = S.tasks.filter((t) => match(t, S.q))
+      .filter((t) => F.taskAssignee === 'all' || t.assignee === F.taskAssignee)
+      .filter((t) => F.taskPriority === 'all' || t.priority === F.taskPriority)
+      .sort((a, b) => ({ urgent: 0, high: 1, normal: 2, low: 3 }[a.priority] ?? 2) - ({ urgent: 0, high: 1, normal: 2, low: 3 }[b.priority] ?? 2) || (a.dueDate || '9999').localeCompare(b.dueDate || '9999'));
+    const toolbar = `<div class="toolbar">
+      <div class="chips"><span class="chip ${F.taskView === 'kanban' ? 'on' : ''}" data-act="f" data-f="taskView" data-v="kanban">▦ לוח</span><span class="chip ${F.taskView === 'list' ? 'on' : ''}" data-act="f" data-f="taskView" data-v="list">☰ רשימה</span></div>
+      <select data-fsel="taskPriority"><option value="all">כל העדיפויות</option>${Object.entries(PRIORITY).map(([k, v]) => `<option value="${k}" ${F.taskPriority === k ? 'selected' : ''}>${v.l}</option>`).join('')}</select>
+      <select data-fsel="taskAssignee"><option value="all">כל האחראים</option>${assignees.map((a) => `<option ${F.taskAssignee === a ? 'selected' : ''}>${esc(a)}</option>`).join('')}</select>
+      <div class="spacer"></div><span style="color:var(--muted);font-size:13.5px">${rows.filter((t) => t.status !== 'done').length} פתוחות</span></div>`;
+    let body;
+    if (F.taskView === 'kanban' && window.innerWidth > 760) {
+      body = `<div class="kanban">${Object.entries(TSTATUS).map(([k, v]) => { const list = rows.filter((t) => (t.status || 'new') === k);
+        return `<div class="col" data-drop="${k}"><div class="col-h"><span style="width:10px;height:10px;border-radius:50%;background:${v.color}"></span>${v.l}<span class="n">${list.length}</span></div>
+          ${list.map(taskCard).join('') || '<div class="empty" style="padding:20px 0;font-size:13px">גרור לכאן</div>'}</div>`; }).join('')}</div>`;
+    } else {
+      body = Object.entries(TSTATUS).map(([k, v]) => { const list = rows.filter((t) => (t.status || 'new') === k); if (!list.length) return '';
+        return `<div class="card" style="margin-bottom:14px"><div class="card-h"><span class="tag" style="background:${v.color}"></span><h2>${v.l}</h2><span class="pill gray">${list.length}</span></div>${list.map(taskCard).join('')}</div>`; }).join('') || '<div class="empty">אין משימות</div>';
+    }
+    return shell(toolbar + body, 'משימות', 'משימות המפקד לרל"שית — מעקב, עדיפות ותגובות', `<button class="btn orange" data-act="new-task">+ משימה חדשה</button>`);
+  }
+  function openTaskEditor(t = {}, quick = false) {
+    const users = ['הרל"שית', 'המפקד', ...new Set(S.tasks.map((x) => x.assignee).filter(Boolean))];
+    const pr = t.priority || 'normal';
+    const dueBtns = [['היום', 0], ['מחר', 1], ['בעוד 3 ימים', 3], ['שבוע', 7]].map(([l, d]) => `<span class="chip" data-act="due" data-d="${d}">${l}</span>`).join('');
+    modal(t.id ? 'עריכת משימה' : quick ? 'משימה מהירה' : 'משימה חדשה', `<form id="taskForm"><div class="form-grid">
+      <div class="field full"><label>מה צריך לעשות?</label><input name="title" value="${esc(t.title || '')}" placeholder="לדוגמה: לתאם פגישה עם הקבלן" autofocus></div>
+      <div class="field full"><label>עדיפות</label><div class="chips" id="prioChips">${Object.entries(PRIORITY).map(([k, v]) => `<span class="chip ${pr === k ? 'on' : ''}" data-act="prio" data-v="${k}">${v.l}</span>`).join('')}</div><input type="hidden" name="priority" value="${pr}"></div>
+      <div class="field"><label>תאריך יעד</label><input name="dueDate" type="date" value="${esc(t.dueDate || '')}"><div class="chips" style="margin-top:6px">${dueBtns}</div></div>
+      <div class="field"><label>אחראי/ת</label><input name="assignee" list="assigneeList" value="${esc(t.assignee || 'הרל"שית')}"><datalist id="assigneeList">${[...new Set(users)].map((u) => `<option value="${esc(u)}">`).join('')}</datalist></div>
+      ${quick ? '' : `
+      <div class="field full"><label>פירוט</label><textarea name="description">${esc(t.description || '')}</textarea></div>
+      <div class="field"><label>סטטוס</label><select name="status">${Object.entries(TSTATUS).map(([k, v]) => `<option value="${k}" ${(t.status || 'new') === k ? 'selected' : ''}>${v.l}</option>`).join('')}</select></div>
+      <div class="field"><label>קטגוריה</label><input name="category" list="catList" value="${esc(t.category || '')}"><datalist id="catList">${['הזמנות', 'הסכמים', 'שטח', 'כספים', 'מנהלה', 'ישיבות'].map((c) => `<option value="${c}">`).join('')}</datalist></div>
+      <div class="field"><label>קשור להזמנה</label><select name="linkOrder"><option value="">—</option>${S.orders.map((o) => `<option value="${o.id}" ${t.linkOrder === o.id ? 'selected' : ''}>${esc(o.orderNumber)} · ${esc(o.supplier || '')}</option>`).join('')}</select></div>
+      <div class="field"><label>קשור להסכם</label><select name="linkAgreement"><option value="">—</option>${S.agreements.map((a) => `<option value="${a.id}" ${t.linkAgreement === a.id ? 'selected' : ''}>${esc(a.agreementNumber || '')} · ${esc(a.name || '')}</option>`).join('')}</select></div>`}
+    </div></form>`, `<button class="btn orange" data-act="save-task">שמירה</button><button class="btn" data-act="close">ביטול</button>`);
+    S._editing = { col: 'tasks', id: t.id || null, fromNote: t._fromNote || null };
+    setTimeout(() => { const i = $('#taskForm [name=title]'); i && i.focus(); }, 50);
+  }
+  async function saveTask() {
+    const d = readForm($('#taskForm'));
+    if (!d.title) return toast('יש לכתוב את המשימה', 'error');
+    const ed = S._editing;
+    if (ed.id) {
+      const prev = byId('tasks', ed.id);
+      if (d.status === 'done' && prev.status !== 'done') d.doneAt = new Date().toISOString();
+      await DB.update('tasks', ed.id, d); DB.log('עדכן/ה משימה', 'task', d.title);
+    } else {
+      d.status = d.status || 'new'; d.comments = [];
+      await DB.add('tasks', d); DB.log('יצר/ה משימה', 'task', d.title);
+      if (ed.fromNote) await DB.remove('notes', ed.fromNote);
+    }
+    closeModal(); toast('המשימה נשמרה', 'ok');
+  }
+  function openTask(id) {
+    const t = byId('tasks', id); if (!t) return;
+    const P = PRIORITY[t.priority] || PRIORITY.normal;
+    const o = t.linkOrder && byId('orders', t.linkOrder); const a = t.linkAgreement && byId('agreements', t.linkAgreement);
+    modal(esc(t.title), `
+      <div class="chips" style="margin-bottom:14px">${Object.entries(TSTATUS).map(([k, v]) => `<span class="chip ${(t.status || 'new') === k ? 'on' : ''}" data-act="tstatus" data-id="${id}" data-v="${k}">${v.l}</span>`).join('')}</div>
+      <div class="info-grid">
+        <div class="info"><small>עדיפות</small><b><span class="pill ${P.c}">${P.l}</span></b></div>
+        <div class="info"><small>תאריך יעד</small><b>${dfmt(t.dueDate)}</b></div>
+        <div class="info"><small>אחראי/ת</small><b>${esc(t.assignee || '—')}</b></div>
+        <div class="info"><small>קטגוריה</small><b>${esc(t.category || '—')}</b></div>
+        <div class="info"><small>נוצרה ע"י</small><b>${esc(t.createdBy || '—')}</b></div>
+        <div class="info"><small>קישור</small><b>${o ? `<a href="#" data-act="open" data-kind="order" data-id="${o.id}">📄 ${esc(o.orderNumber)}</a>` : a ? `<a href="#" data-act="open" data-kind="agreement" data-id="${a.id}">📑 ${esc(a.agreementNumber || a.name)}</a>` : '—'}</b></div>
+      </div>
+      ${t.description ? `<div class="section-t">פירוט</div><div style="white-space:pre-wrap">${esc(t.description)}</div>` : ''}
+      <div class="section-t">💬 עדכונים ותגובות</div>
+      ${(t.comments || []).map((c) => `<div style="background:var(--surface-2);border-radius:12px;padding:10px 12px;margin-bottom:8px"><b>${esc(c.by)}</b> <span style="color:var(--muted);font-size:12px">${new Date(c.at).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' })}</span><div>${esc(c.text)}</div></div>`).join('') || '<div class="empty" style="padding:10px">אין עדכונים</div>'}
+      <div style="display:flex;gap:8px;margin-top:8px"><input id="cmt" placeholder="כתוב עדכון…" style="flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:10px"><button class="btn orange" data-act="comment" data-id="${id}">שלח</button></div>`,
+      `<button class="btn orange" data-act="edit-task" data-id="${id}">✏️ עריכה</button>
+       ${t.status !== 'done' ? `<button class="btn" data-act="tstatus" data-id="${id}" data-v="done">✔ סמן כהושלמה</button>` : ''}
+       <div class="spacer"></div><button class="btn danger" data-act="del" data-col="tasks" data-id="${id}">מחיקה</button>`);
+  }
+
+  /* ---------------- פיתקיות ---------------- */
+  function viewNotes() {
+    const notes = S.notes.filter((x) => match(x, S.q)).sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || (b.createdAt || '').localeCompare(a.createdAt || ''));
+    const content = `<div class="quick-note"><textarea id="qn" placeholder="כתוב פיתקית ולחץ Enter… (Shift+Enter לשורה חדשה)"></textarea><button class="btn pink" data-act="add-note">הוסף</button></div>
+      <div class="notes-board">${notes.map((x, i) => `<div class="sticky s-${x.color || 'yellow'}" style="--rot:${[-1.5, 1, -0.5, 1.5][i % 4]}deg">
+        <div class="txt" contenteditable="true" data-note="${x.id}">${esc(x.text)}</div>
+        <div class="foot"><div class="color-dots">${NOTE_COLORS.map((c) => `<i class="s-${c}" data-act="note-color" data-id="${x.id}" data-c="${c}"></i>`).join('')}</div><div class="spacer"></div>
+          <button data-act="note-pin" data-id="${x.id}" title="הצמד לדשבורד">${x.pinned ? '📌' : '📍'}</button>
+          <button data-act="note-task" data-id="${x.id}" title="הפוך למשימה">→ משימה</button>
+          <button data-act="note-del" data-id="${x.id}" title="מחק">🗑</button></div>
+        <div style="font-size:11px;opacity:.6;margin-top:4px">${esc(x.createdBy || '')} · ${dfmt((x.createdAt || '').slice(0, 10))}</div></div>`).join('') || '<div class="empty">אין פיתקיות. כתוב משהו למעלה ✍️</div>'}</div>`;
+    return shell(content, 'לוח פיתקיות', 'כתיבה מהירה — ובהמשך "→ משימה" מעביר לטבלת השליטה');
+  }
+  async function addNote(text) {
+    text = (text || '').trim(); if (!text) return;
+    await DB.add('notes', { text, color: NOTE_COLORS[S.notes.length % NOTE_COLORS.length] });
+  }
+
+  /* ---------------- דוחות ---------------- */
+  const REPORT_COLS = {
+    orders: [['orderNumber', 'מספר הזמנה'], ['version', 'גרסה'], ['demandNumber', 'מספר דרישה'], ['supplier', 'ספק'], ['description', 'תיאור'], ['demandBudget', 'תקציב בדרישה'],
+      ['budgetExVat', 'תקציב בהזמנה'], ['budgetTotal', 'כולל מע"מ'], ['utilized', 'נוצל'], ['utilPct', '% ניצול'], ['startDate', 'תחילה'], ['endDate', 'סיום'], ['daysLeft', 'ימים לסיום'], ['status', 'סטטוס']],
+    agreements: [['agreementNumber', 'מספר הסכם'], ['demandNumber', 'מספר דרישה'], ['name', 'שם ההסכם'], ['contractor', 'קבלן'], ['kind', 'סוג'], ['targetValue', 'ערך יעד'],
+      ['utilized', 'נוצל'], ['utilPct', '% ניצול'], ['startDate', 'תחילה'], ['endDate', 'סיום'], ['daysLeft', 'ימים לסיום'], ['status', 'סטטוס']],
+    tasks: [['title', 'משימה'], ['priority', 'עדיפות'], ['status', 'סטטוס'], ['assignee', 'אחראי/ת'], ['dueDate', 'תאריך יעד'], ['category', 'קטגוריה'], ['link', 'קישור'], ['createdBy', 'נוצרה ע"י'], ['description', 'פירוט']],
+  };
+  const DEFAULT_COLS = { orders: ['orderNumber', 'demandNumber', 'supplier', 'demandBudget', 'budgetExVat', 'utilPct', 'startDate', 'endDate', 'status'],
+    agreements: ['agreementNumber', 'demandNumber', 'name', 'contractor', 'targetValue', 'utilPct', 'startDate', 'endDate', 'status'],
+    tasks: ['title', 'priority', 'status', 'assignee', 'dueDate', 'link'] };
+  const SEC_NAME = { orders: 'הזמנות עבודה', agreements: 'הסכמים וחוזים', tasks: 'משימות' };
+  const SEC_COLOR = { orders: '#2563eb', agreements: '#0d9488', tasks: '#ea7a0c' };
+  function defaultReport() {
+    return { title: 'דוח מצב', sections: ['orders', 'agreements', 'tasks'], cols: JSON.parse(JSON.stringify(DEFAULT_COLS)), status: 'active', from: '', to: '', text: '', taskStatus: 'open', priority: 'all' };
+  }
+  S.report = defaultReport();
+
+  function reportData(R) {
+    const inRange = (d) => (!R.from || (d && d >= R.from)) && (!R.to || (d && d <= R.to));
+    const out = {};
+    if (R.sections.includes('orders')) out.orders = S.orders.filter((o) => match(o, R.text) && inRange(o.endDate)).filter((o) => { const k = orderStatus(o).k;
+      return R.status === 'all' || (R.status === 'active' && ['active', 'soon', 'ending'].includes(k)) || (R.status === 'ending' && ['soon', 'ending'].includes(k)) || (R.status === 'closed' && ['ended', 'linked', 'cancelled'].includes(k)); })
+      .sort((a, b) => (a.endDate || '').localeCompare(b.endDate || ''))
+      .map((o) => ({ ...o, utilPct: pct(o.utilized || 0, o.budgetExVat), daysLeft: daysLeft(o.endDate), status: orderStatus(o).l }));
+    if (R.sections.includes('agreements')) out.agreements = S.agreements.filter((a) => match(a, R.text) && inRange(a.endDate)).filter((a) => { const k = agreeStatus(a).k;
+      return R.status === 'all' || (R.status === 'active' && ['active', 'soon', 'ending'].includes(k)) || (R.status === 'ending' && ['soon', 'ending'].includes(k)) || (R.status === 'closed' && ['ended', 'cancelled'].includes(k)); })
+      .sort((a, b) => (a.endDate || '').localeCompare(b.endDate || ''))
+      .map((a) => ({ ...a, utilPct: pct(a.utilized || 0, a.targetValue), daysLeft: daysLeft(a.endDate), status: agreeStatus(a).l }));
+    if (R.sections.includes('tasks')) out.tasks = S.tasks.filter((t) => match(t, R.text) && inRange(t.dueDate))
+      .filter((t) => R.taskStatus === 'all' || (R.taskStatus === 'open' ? t.status !== 'done' : t.status === R.taskStatus))
+      .filter((t) => R.priority === 'all' || t.priority === R.priority)
+      .sort((a, b) => (a.dueDate || '9999').localeCompare(b.dueDate || '9999'))
+      .map((t) => ({ ...t, priority: (PRIORITY[t.priority] || PRIORITY.normal).l, status: (TSTATUS[t.status] || TSTATUS.new).l,
+        link: t.linkOrder ? 'הזמנה ' + ((byId('orders', t.linkOrder) || {}).orderNumber || '') : t.linkAgreement ? 'הסכם ' + ((byId('agreements', t.linkAgreement) || {}).agreementNumber || '') : '' }));
+    return out;
+  }
+  const MONEY_KEYS = ['demandBudget', 'budgetExVat', 'budgetTotal', 'utilized', 'targetValue'];
+  const DATE_KEYS = ['startDate', 'endDate', 'dueDate'];
+  const cellText = (k, v) => (v == null || v === '' ? '' : MONEY_KEYS.includes(k) ? money(v) : DATE_KEYS.includes(k) ? dfmt(v) : k === 'utilPct' ? v + '%' : String(v));
+
+  function reportHTML(R, data) {
+    return `<div class="report-doc"><h1>${esc(R.title)}</h1><div class="meta">הופק ב‑${new Date().toLocaleString('he-IL')} · ע"י ${esc(DB.user.name)}${R.from || R.to ? ` · טווח: ${dfmt(R.from)} – ${dfmt(R.to)}` : ''}</div>
+      ${Object.entries(data).map(([sec, rows]) => { const cols = REPORT_COLS[sec].filter(([k]) => R.cols[sec].includes(k));
+        const sums = sec === 'orders' ? `<div class="sum"><div>${rows.length} הזמנות</div><div>תקציב: ${money(rows.reduce((s, r) => s + (r.budgetExVat || 0), 0))}</div><div>נוצל: ${money(rows.reduce((s, r) => s + (r.utilized || 0), 0))}</div></div>`
+          : sec === 'agreements' ? `<div class="sum"><div>${rows.length} הסכמים</div><div>ערך יעד: ${money(rows.reduce((s, r) => s + (r.targetValue || 0), 0))}</div></div>`
+            : `<div class="sum"><div>${rows.length} משימות</div></div>`;
+        return `<h2 style="background:${SEC_COLOR[sec]}">${SEC_NAME[sec]}</h2>${sums}<table><thead><tr>${cols.map(([, l]) => `<th>${l}</th>`).join('')}</tr></thead>
+          <tbody>${rows.map((r) => `<tr>${cols.map(([k]) => `<td>${esc(cellText(k, r[k]))}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${cols.length}">אין נתונים</td></tr>`}</tbody></table>`; }).join('')}</div>`;
+  }
+  function viewReports() {
+    const R = S.report; const st = settings();
+    const presets = st.reportPresets || [];
+    const quick = [
+      ['📋 דוח מצב מלא', { sections: ['orders', 'agreements', 'tasks'], status: 'active', taskStatus: 'open' }],
+      ['⏳ מסתיימים בקרוב', { sections: ['orders', 'agreements'], status: 'ending' }],
+      ['📄 הזמנות בלבד', { sections: ['orders'], status: 'all' }],
+      ['📑 הסכמים בלבד', { sections: ['agreements'], status: 'all' }],
+      ['✅ משימות פתוחות', { sections: ['tasks'], taskStatus: 'open' }],
+    ];
+    const data = reportData(R);
+    const content = `<div class="grid dash-2" style="grid-template-columns:380px 1fr;margin-top:0">
+      <div class="card"><div class="card-h"><span class="tag" style="background:var(--c-report)"></span><h2>הגדרות הדוח</h2></div>
+        <div class="field" style="margin-bottom:12px"><label>תבניות מהירות</label><div class="chips">${quick.map(([l], i) => `<span class="chip" data-act="rq" data-i="${i}">${l}</span>`).join('')}
+          ${presets.map((p, i) => `<span class="chip" data-act="rp" data-i="${i}" style="border-color:var(--c-report)">⭐ ${esc(p.title)} <b data-act="rp-del" data-i="${i}" style="margin-inline-start:4px">✕</b></span>`).join('')}</div></div>
+        <div class="field" style="margin-bottom:12px"><label>כותרת הדוח</label><input data-r="title" value="${esc(R.title)}"></div>
+        <div class="field" style="margin-bottom:12px"><label>מה לכלול</label><div class="chips">${Object.entries(SEC_NAME).map(([k, l]) => `<span class="chip ${R.sections.includes(k) ? 'on' : ''}" data-act="rsec" data-v="${k}">${l}</span>`).join('')}</div></div>
+        <div class="form-grid" style="margin-bottom:12px">
+          <div class="field"><label>סטטוס הזמנות/הסכמים</label><select data-r="status">${[['all', 'הכל'], ['active', 'פעילים'], ['ending', 'מסתיימים בקרוב'], ['closed', 'סגורים']].map(([k, l]) => `<option value="${k}" ${R.status === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+          <div class="field"><label>סטטוס משימות</label><select data-r="taskStatus">${[['all', 'הכל'], ['open', 'פתוחות'], ...Object.entries(TSTATUS).map(([k, v]) => [k, v.l])].map(([k, l]) => `<option value="${k}" ${R.taskStatus === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+          <div class="field"><label>סיום / יעד מ‑</label><input type="date" data-r="from" value="${esc(R.from)}"></div>
+          <div class="field"><label>עד</label><input type="date" data-r="to" value="${esc(R.to)}"></div>
+          <div class="field"><label>עדיפות משימות</label><select data-r="priority"><option value="all">הכל</option>${Object.entries(PRIORITY).map(([k, v]) => `<option value="${k}" ${R.priority === k ? 'selected' : ''}>${v.l}</option>`).join('')}</select></div>
+          <div class="field"><label>חיפוש (ספק, קבלן…)</label><input data-r="text" value="${esc(R.text)}"></div>
+        </div>
+        ${R.sections.map((sec) => `<details style="margin-bottom:8px"><summary style="cursor:pointer;font-weight:600">עמודות — ${SEC_NAME[sec]}</summary><div class="chips" style="margin-top:8px">
+          ${REPORT_COLS[sec].map(([k, l]) => `<span class="chip ${R.cols[sec].includes(k) ? 'on' : ''}" data-act="rcol" data-sec="${sec}" data-v="${k}">${l}</span>`).join('')}</div></details>`).join('')}
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+          <button class="btn primary" data-act="export-xlsx" style="background:#16a34a">⬇ Excel</button>
+          <button class="btn danger" data-act="export-pdf" style="background:#dc2626;color:#fff">⬇ PDF</button>
+          <button class="btn" data-act="export-print">🖨 הדפסה</button>
+          <button class="btn violet" data-act="save-preset">⭐ שמור תבנית</button></div>
+      </div>
+      <div class="card" style="overflow:auto"><div class="card-h"><span class="tag" style="background:var(--c-report)"></span><h2>תצוגה מקדימה</h2></div><div id="rprev">${reportHTML(R, data)}</div></div>
+    </div>`;
+    return shell(content, 'מחולל דוחות', 'בחר מה לכלול, סנן וייצא ל‑Excel או PDF');
+  }
+  function exportXlsx(R) {
+    const data = reportData(R); const wb = XLSX.utils.book_new(); wb.Workbook = { Views: [{ RTL: true }] };
+    Object.entries(data).forEach(([sec, rows]) => {
+      const cols = REPORT_COLS[sec].filter(([k]) => R.cols[sec].includes(k));
+      const aoa = [cols.map(([, l]) => l), ...rows.map((r) => cols.map(([k]) => { const v = r[k]; if (v == null) return ''; if (DATE_KEYS.includes(k)) return dfmt(v); return v; }))];
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      ws['!cols'] = cols.map(([k]) => ({ wch: ['description', 'name', 'title', 'supplier'].includes(k) ? 34 : 15 }));
+      ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: aoa.length - 1, c: cols.length - 1 } }) };
+      cols.forEach(([k], c) => { if (MONEY_KEYS.includes(k)) for (let r = 1; r < aoa.length; r++) { const cell = ws[XLSX.utils.encode_cell({ r, c })]; if (cell && typeof cell.v === 'number') cell.z = '#,##0 ₪'; } });
+      XLSX.utils.book_append_sheet(wb, ws, SEC_NAME[sec]);
+    });
+    XLSX.writeFile(wb, `${R.title || 'דוח'} ${today()}.xlsx`);
+    DB.log('הפיק/ה דוח Excel', 'report', R.title);
+  }
+  function exportPdf(R) {
+    const el = document.createElement('div'); el.innerHTML = reportHTML(R, reportData(R));
+    el.firstElementChild.classList.add('pdf-mode'); // תיקון רווחים בעברית ב‑html2canvas
+    toast('מפיק PDF…');
+    html2pdf().set({ margin: 8, filename: `${R.title || 'דוח'} ${today()}.pdf`, image: { type: 'jpeg', quality: 0.95 }, html2canvas: { scale: 2 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }, pagebreak: { mode: ['css', 'legacy'] } }).from(el.firstElementChild).save();
+    DB.log('הפיק/ה דוח PDF', 'report', R.title);
+  }
+  function exportPrint(R) {
+    const w = window.open('', '_blank');
+    if (!w) return toast('הדפדפן חסם חלון חדש', 'error');
+    w.document.write(`<html dir="rtl"><head><title>${esc(R.title)}</title><link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="${location.href.split('#')[0].replace(/[^/]*$/, '')}css/style.css"><style>body{background:#fff}@page{size:A4 landscape;margin:10mm}</style></head><body>${reportHTML(R, reportData(R))}<script>setTimeout(()=>print(),600)<\/script></body></html>`);
+    w.document.close();
+  }
+
+  /* ---------------- הגדרות ---------------- */
+  function viewSettings() {
+    const st = settings(); const u = DB.user;
+    const content = `<div class="grid dash-2" style="margin-top:0">
+      <div class="card"><div class="card-h"><span class="tag" style="background:var(--c-alert)"></span><h2>התראות</h2></div>
+        <form id="setForm"><div class="form-grid">
+          <div class="field"><label>התראה דחופה (ימים לפני סיום)</label><input name="alertDays" type="number" value="${st.alertDays}"></div>
+          <div class="field"><label>התראה מוקדמת (ימים)</label><input name="warnDays" type="number" value="${st.warnDays}"></div>
+          <div class="field"><label>אזהרת ניצול (%)</label><input name="utilWarn" type="number" value="${st.utilWarn}"></div>
+          <div class="field"><label>ניצול קריטי (%)</label><input name="utilCritical" type="number" value="${st.utilCritical}"></div>
+        </div></form>
+        <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn primary" data-act="save-settings">שמירה</button>
+          <button class="btn" data-act="notif">🔔 הפעל התראות בדפדפן</button><button class="btn" data-act="unsnooze">החזר התראות מושתקות</button></div>
+      </div>
+      <div class="card"><div class="card-h"><span class="tag" style="background:var(--c-report)"></span><h2>משתמש ונתונים</h2></div>
+        <p>מחובר/ת: <b>${esc(u.name)}</b> ${u.email ? `(${esc(u.email)})` : ''} · תפקיד: <b>${u.role === 'commander' ? 'מפקד' : u.role === 'admin' ? 'מנהל' : 'רל"שית'}</b></p>
+        ${DB.mode === 'demo' ? `<div class="banner warn">מצב הדגמה: הנתונים נשמרים רק בדפדפן הזה. לחיבור אמיתי מלא את <b>js/firebase-config.js</b> (הוראות ב‑README).</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button class="btn" data-act="role" data-v="commander">כניסה כמפקד</button><button class="btn" data-act="role" data-v="assistant">כניסה כרל"שית</button><button class="btn danger" data-act="reset-demo">איפוס הדגמה</button></div>`
+          : `<button class="btn" data-act="logout" style="margin-bottom:12px">התנתקות</button>`}
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="backup">⬇ גיבוי JSON</button><label class="btn">⬆ שחזור מגיבוי<input type="file" accept="application/json" id="restore" hidden></label></div>
+      </div></div>`;
+    return shell(content, 'הגדרות');
+  }
+
+  /* ---------------- חלון ---------------- */
+  function modal(title, body, foot = '', cls = '') {
+    const old = $('#modal'); if (old) old.remove();
+    const bg = document.createElement('div'); bg.className = 'modal-bg'; bg.id = 'modal';
+    bg.innerHTML = `<div class="modal ${cls}"><div class="modal-h"><h3>${title}</h3><button class="btn ghost" data-act="close">✕</button></div><div class="modal-b">${body}</div>${foot ? `<div class="modal-f">${foot}</div>` : ''}</div>`;
+    bg.addEventListener('mousedown', (e) => { if (e.target === bg) closeModal(); });
+    document.body.appendChild(bg);
+  }
+  /* חלון אישור פנימי (במקום confirm/prompt של הדפדפן) */
+  function ask(msg, withInput = false, def = '') {
+    return new Promise((resolve) => {
+      const bg = document.createElement('div'); bg.className = 'modal-bg'; bg.style.zIndex = 80;
+      bg.innerHTML = `<div class="modal" style="width:min(420px,100%)"><div class="modal-b"><p style="margin-top:0;font-weight:600">${esc(msg)}</p>
+        ${withInput ? `<input id="askIn" value="${esc(def)}" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px">` : ''}</div>
+        <div class="modal-f"><button class="btn primary" id="askOk">אישור</button><button class="btn" id="askNo">ביטול</button></div></div>`;
+      document.body.appendChild(bg);
+      const done = (v) => { bg.remove(); resolve(v); };
+      bg.querySelector('#askOk').onclick = () => done(withInput ? bg.querySelector('#askIn').value.trim() || null : true);
+      bg.querySelector('#askNo').onclick = () => done(withInput ? null : false);
+      const i = bg.querySelector('#askIn'); if (i) { i.focus(); i.onkeydown = (e) => { if (e.key === 'Enter') bg.querySelector('#askOk').click(); }; }
+    });
+  }
+  function closeModal() { const m = $('#modal'); if (m) m.remove(); S._openDetail = null; }
+  function openDetail(kind, id) {
+    S._openDetail = [kind, id];
+    if (kind === 'order') openOrder(id); else if (kind === 'agreement') openAgreement(id); else if (kind === 'task') openTask(id);
+  }
+
+  /* ---------------- קליטת PDF ---------------- */
+  async function handlePdf(file) {
+    if (!file || !/pdf$/i.test(file.type || file.name)) return toast('יש לגרור קובץ PDF', 'error');
+    toast('קורא את ההזמנה…');
+    try {
+      const d = await OrderParser.parseOrderPdf(file);
+      const found = d._found || [];
+      if (!found.includes('orderNumber')) { openOrderEditor({ _fromPdf: true }, [], '<div class="banner warn">לא זוהה מבנה של הזמנת משהב"ט בקובץ. מלא את הפרטים ידנית.</div>'); return; }
+      const prev = S.orders.filter((o) => o.orderNumber === d.orderNumber);
+      if (prev.length) {
+        const p = prev[0];
+        const diff = [];
+        if (d.budgetExVat && d.budgetExVat !== p.budgetExVat) diff.push(`תקציב: ${money(p.budgetExVat)} ← ${money(d.budgetExVat)}`);
+        if (d.endDate && d.endDate !== p.endDate) diff.push(`סיום: ${dfmt(p.endDate)} ← ${dfmt(d.endDate)}`);
+        if (d.version && d.version !== String(p.version)) diff.push(`גרסה: ${p.version} ← ${d.version}`);
+        modal('ההזמנה כבר קיימת במערכת', `<p>הזמנה <b>${esc(d.orderNumber)}</b> כבר קיימת. ${diff.length ? 'בקובץ החדש זוהו שינויים:' : 'לא זוהו שינויים בתקציב, תוקף או גרסה.'}</p>
+          ${diff.map((x) => `<div class="banner">${esc(x)}</div>`).join('')}`,
+          `${diff.length ? `<button class="btn primary" data-act="apply-pdf" data-id="${p.id}">עדכן את ההזמנה הקיימת</button>` : ''}<button class="btn" data-act="open" data-kind="order" data-id="${p.id}">פתח הזמנה</button><button class="btn" data-act="close">סגור</button>`);
+        S._pdf = d; return;
+      }
+      openOrderEditor({ ...d, demandBudget: d.budgetExVat, utilized: 0, _fromPdf: true }, found,
+        `<div class="banner">✓ זוהו ${found.length} שדות מהקובץ <b>${esc(file.name)}</b> (מסומנים בירוק). בדוק, השלם "תקציב בדרישה" אם שונה, ושמור.</div>`);
+      S._editing.prev = { _fromPdf: true };
+    } catch (e) { console.error(e); toast('שגיאה בקריאת הקובץ: ' + e.message, 'error'); }
+  }
+  async function applyPdf(id) {
+    const p = byId('orders', id); const d = S._pdf; const patch = { history: [...(p.history || [])] };
+    if (d.budgetExVat && d.budgetExVat !== p.budgetExVat) { const delta = d.budgetExVat - (p.budgetExVat || 0);
+      patch.history.push({ type: delta > 0 ? 'increase' : 'decrease', date: today(), amount: Math.abs(delta), note: `לפי גרסה ${d.version || ''} מקובץ PDF`, by: DB.user.name });
+      patch.budgetExVat = d.budgetExVat; patch.vat = d.vat; patch.budgetTotal = d.budgetTotal; }
+    if (d.endDate && d.endDate !== p.endDate) { patch.endDate = d.endDate; patch.history.push({ type: 'extend', date: today(), newEnd: d.endDate, note: 'לפי קובץ PDF', by: DB.user.name }); }
+    if (d.version) patch.version = d.version;
+    if (d.consultants) patch.consultants = d.consultants;
+    await DB.update('orders', id, patch); DB.log('עדכן/ה הזמנה מ‑PDF', 'order', p.orderNumber);
+    toast('ההזמנה עודכנה', 'ok'); openOrder(id);
+  }
+
+  /* ---------------- רינדור וניווט ---------------- */
+  function render() {
+    const r = (location.hash.replace(/^#\/?/, '') || 'dashboard').split('?')[0];
+    S.route = NAV.find((x) => x.id === r) ? r : 'dashboard';
+    const V = { dashboard: viewDashboard, orders: viewOrders, agreements: viewAgreements, tasks: viewTasks, notes: viewNotes, reports: viewReports, config: viewSettings };
+    const active = document.activeElement && document.activeElement.id;
+    const pos = active === 'gsearch' ? document.activeElement.selectionStart : null;
+    $('#root').innerHTML = V[S.route]();
+    if (active === 'gsearch') { const g = $('#gsearch'); g.focus(); g.setSelectionRange(pos, pos); }
+    bindView();
+    // רענון חלון פתוח אם הנתונים השתנו
+    if (S._openDetail && !$('#modal form')) { const [k, id] = S._openDetail; const m = $('#modal'); const sc = m && $('.modal', m).scrollTop; openDetail(k, id); const m2 = $('#modal .modal'); if (m2 && sc) m2.scrollTop = sc; }
+  }
+  let renderTimer;
+  const scheduleRender = () => { clearTimeout(renderTimer); renderTimer = setTimeout(render, 30); };
+
+  function bindView() {
+    const dz = $('#dz');
+    if (dz) {
+      dz.onclick = () => $('#dzfile').click();
+      $('#dzfile').onchange = (e) => handlePdf(e.target.files[0]);
+      ['dragenter', 'dragover'].forEach((ev) => dz.addEventListener(ev, (e) => { e.preventDefault(); dz.classList.add('over'); }));
+      ['dragleave', 'drop'].forEach((ev) => dz.addEventListener(ev, () => dz.classList.remove('over')));
+    }
+    const qn = $('#qn');
+    if (qn) qn.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); addNote(qn.value); qn.value = ''; } };
+    $$('[data-note]').forEach((el) => { el.onblur = () => { const x = byId('notes', el.dataset.note); if (x && el.innerText.trim() !== x.text) DB.update('notes', x.id, { text: el.innerText.trim() }); }; });
+    // גרירת משימות בין עמודות
+    $$('[data-task]').forEach((el) => { el.ondragstart = (e) => { e.dataTransfer.setData('text/task', el.dataset.task); }; });
+    $$('[data-drop]').forEach((col) => {
+      col.ondragover = (e) => { if (e.dataTransfer.types.includes('text/task')) { e.preventDefault(); col.classList.add('drag-over'); } };
+      col.ondragleave = () => col.classList.remove('drag-over');
+      col.ondrop = (e) => { e.preventDefault(); col.classList.remove('drag-over'); const id = e.dataTransfer.getData('text/task'); if (id) setTaskStatus(id, col.dataset.drop); };
+    });
+    const restore = $('#restore');
+    if (restore) restore.onchange = async (e) => { const f = e.target.files[0]; if (!f) return; try { await DB.importAll(JSON.parse(await f.text())); toast('הנתונים שוחזרו', 'ok'); } catch (err) { toast('קובץ לא תקין', 'error'); } };
+  }
+  async function setTaskStatus(id, status) {
+    const t = byId('tasks', id); if (!t || t.status === status) return;
+    const patch = { status }; if (status === 'done') patch.doneAt = new Date().toISOString();
+    await DB.update('tasks', id, patch); DB.log(`העביר/ה ל"${TSTATUS[status].l}"`, 'task', t.title);
+  }
+
+  /* חיפוש כללי */
+  function globalSearch(q) {
+    S.q = q;
+    if (['orders', 'agreements', 'tasks', 'notes'].includes(S.route)) { scheduleRender(); return; }
+    const box = $('#search-results'); if (!q) { box.innerHTML = ''; return; }
+    const res = [
+      ...S.orders.filter((x) => match(x, q)).slice(0, 5).map((x) => ['order', x.id, '📄', `הזמנה ${x.orderNumber}`, x.supplier]),
+      ...S.agreements.filter((x) => match(x, q)).slice(0, 5).map((x) => ['agreement', x.id, '📑', x.name || x.agreementNumber, x.contractor]),
+      ...S.tasks.filter((x) => match(x, q)).slice(0, 5).map((x) => ['task', x.id, '✅', x.title, x.assignee]),
+    ];
+    box.innerHTML = `<div class="card" style="margin-bottom:16px">${res.length ? res.map(([k, id, ic, t, s]) => `<div class="alert info" data-act="open" data-kind="${k}" data-id="${id}" style="margin-bottom:6px"><div class="ic">${ic}</div><div class="tx"><b>${esc(t)}</b><span>${esc(s || '')}</span></div></div>`).join('') : '<div class="empty" style="padding:10px">לא נמצאו תוצאות</div>'}</div>`;
+  }
+
+  /* ---------------- אירועים ---------------- */
+  document.addEventListener('input', (e) => {
+    if (e.target.id === 'gsearch') globalSearch(e.target.value);
+    if (e.target.dataset.r) { S.report[e.target.dataset.r] = e.target.value; const p = $('#rprev'); if (p) p.innerHTML = reportHTML(S.report, reportData(S.report)); }
+  });
+  document.addEventListener('change', (e) => {
+    if (e.target.dataset.fsel) { S.f[e.target.dataset.fsel] = e.target.value; render(); }
+    if (e.target.dataset.r && e.target.tagName === 'SELECT') { S.report[e.target.dataset.r] = e.target.value; render(); }
+  });
+  document.addEventListener('click', async (e) => {
+    const go = e.target.closest('[data-go]'); if (go) { location.hash = '#' + go.dataset.go; return; }
+    const el = e.target.closest('[data-act]'); if (!el) { if (!e.target.closest('.fab-menu')) { const fm = $('#fabmenu'); fm && fm.classList.remove('open'); } return; }
+    const a = el.dataset.act; const id = el.dataset.id;
+    if (el.tagName === 'A') e.preventDefault();
+    if (a !== 'fab') { const fm = $('#fabmenu'); fm && fm.classList.remove('open'); }
+    switch (a) {
+      case 'close': closeModal(); break;
+      case 'open': e.stopPropagation(); openDetail(el.dataset.kind, id); break;
+      case 'fab': $('#fabmenu').classList.toggle('open'); break;
+      case 'sort': { const k = el.dataset.k, key = el.dataset.key; const s = S.f.sort[key]; S.f.sort[key] = { k, dir: s && s.k === k ? -s.dir : 1 }; render(); break; }
+      case 'f': S.f[el.dataset.f] = el.dataset.v; render(); break;
+      case 'alerts': { const al = computeAlerts(); modal(`התראות (${al.length})`, `<div class="alerts" style="max-height:none">${al.map(alertHTML).join('') || '<div class="empty">🎉 אין התראות</div>'}</div>`); break; }
+      case 'snooze': { e.stopPropagation(); const st = settings(); await DB.set('settings', 'main', { snoozed: { ...(st.snoozed || {}), [el.dataset.key]: addDays(today(), 7) } }); toast('ההתראה הושתקה לשבוע'); const m = $('#modal'); if (m) { closeModal(); setTimeout(() => $('[data-act=alerts]').click(), 60); } break; }
+      case 'unsnooze': await DB.set('settings', 'main', { snoozed: {} }); toast('כל ההתראות הוחזרו', 'ok'); break;
+      case 'user': location.hash = '#settings'; break;
+      // הזמנות
+      case 'new-order': openOrderEditor(); break;
+      case 'edit-order': openOrderEditor(byId('orders', id)); break;
+      case 'save-order': saveOrder(); break;
+      case 'add-cons': $('#consRows').insertAdjacentHTML('beforeend', consRow()); break;
+      case 'rm-cons': el.closest('.cons-row').remove(); break;
+      case 'link-order': openLinkOrder(id); break;
+      case 'do-link': { const to = $('#linkSel').value; if (!to) return toast('בחר הזמנה', 'error'); const o = byId('orders', id); const t = byId('orders', to);
+        await DB.update('orders', id, { linkedTo: to, history: [...(o.history || []), { type: 'link', date: today(), note: `הועברה להזמנת המשך ${t.orderNumber}`, by: DB.user.name }] });
+        await DB.update('orders', to, { parentId: id }); DB.log('קישר/ה הזמנת המשך', 'order', o.orderNumber); openOrder(id); break; }
+      case 'link-new': { const o = byId('orders', id); openOrderEditor({ parentId: id, demandNumber: o.demandNumber, supplier: o.supplier, supplierNumber: o.supplierNumber, description: o.description, unit: o.unit, buyer: o.buyer, method: o.method, startDate: addDays(o.endDate, 1), consultants: o.consultants }); break; }
+      case 'apply-pdf': applyPdf(id); break;
+      case 'change': openChange(el.dataset.col, id, el.dataset.type); break;
+      case 'save-change': saveChange(el.dataset.col, id, el.dataset.type); break;
+      case 'del': { const col = el.dataset.col; const r = byId(col, id); if (!(await ask('למחוק לצמיתות?'))) return; await DB.remove(col, id); DB.log('מחק/ה', col, r.orderNumber || r.agreementNumber || r.title); closeModal(); toast('נמחק'); break; }
+      // הסכמים
+      case 'new-agreement': openAgreementEditor(); break;
+      case 'edit-agreement': openAgreementEditor(byId('agreements', id)); break;
+      case 'save-agreement': saveAgreement(); break;
+      // משימות
+      case 'new-task': openTaskEditor(); break;
+      case 'quick-task': openTaskEditor({ priority: 'normal', dueDate: addDays(today(), 1) }, true); break;
+      case 'edit-task': openTaskEditor(byId('tasks', id)); break;
+      case 'save-task': saveTask(); break;
+      case 'task-for': openTaskEditor(el.dataset.kind === 'order' ? { linkOrder: id, category: 'הזמנות' } : { linkAgreement: id, category: 'הסכמים' }); break;
+      case 'prio': $$('#prioChips .chip').forEach((c) => c.classList.toggle('on', c === el)); $('#taskForm [name=priority]').value = el.dataset.v; break;
+      case 'due': $('#taskForm [name=dueDate]').value = addDays(today(), +el.dataset.d); break;
+      case 'tstatus': await setTaskStatus(id, el.dataset.v); break;
+      case 'comment': { const v = $('#cmt').value.trim(); if (!v) return; const t = byId('tasks', id); await DB.update('tasks', id, { comments: [...(t.comments || []), { by: DB.user.name, at: new Date().toISOString(), text: v }] }); break; }
+      // פיתקיות
+      case 'quick-note': if (S.route !== 'notes') { location.hash = '#notes'; setTimeout(() => $('#qn') && $('#qn').focus(), 120); } else $('#qn').focus(); break;
+      case 'add-note': addNote($('#qn').value); $('#qn').value = ''; break;
+      case 'note-color': DB.update('notes', id, { color: el.dataset.c }); break;
+      case 'note-pin': DB.update('notes', id, { pinned: !byId('notes', id).pinned }); break;
+      case 'note-del': if (await ask('למחוק את הפיתקית?')) DB.remove('notes', id); break;
+      case 'note-task': { const x = byId('notes', id); openTaskEditor({ title: x.text.split('\n')[0].slice(0, 120), description: x.text, _fromNote: id }); break; }
+      // דוחות
+      case 'report-quick': S.report = defaultReport(); location.hash = '#reports'; break;
+      case 'rq': { const presets = [{ sections: ['orders', 'agreements', 'tasks'], status: 'active', taskStatus: 'open' }, { sections: ['orders', 'agreements'], status: 'ending' }, { sections: ['orders'], status: 'all' }, { sections: ['agreements'], status: 'all' }, { sections: ['tasks'], taskStatus: 'open' }];
+        S.report = { ...defaultReport(), ...presets[+el.dataset.i], title: el.textContent.replace(/^\S+\s/, '').trim() }; render(); break; }
+      case 'rp': if (e.target.dataset.act === 'rp-del') break; S.report = JSON.parse(JSON.stringify(settings().reportPresets[+el.dataset.i])); render(); break;
+      case 'rp-del': { e.stopPropagation(); const p = (settings().reportPresets || []).slice(); p.splice(+el.dataset.i, 1); await DB.set('settings', 'main', { reportPresets: p }); break; }
+      case 'rsec': { const s = S.report.sections; const v = el.dataset.v; S.report.sections = s.includes(v) ? s.filter((x) => x !== v) : [...s, v].sort((a, b) => ['orders', 'agreements', 'tasks'].indexOf(a) - ['orders', 'agreements', 'tasks'].indexOf(b)); render(); break; }
+      case 'rcol': { const c = S.report.cols[el.dataset.sec]; const v = el.dataset.v; S.report.cols[el.dataset.sec] = c.includes(v) ? c.filter((x) => x !== v) : REPORT_COLS[el.dataset.sec].map(([k]) => k).filter((k) => c.includes(k) || k === v); render(); break; }
+      case 'export-xlsx': exportXlsx(S.report); break;
+      case 'export-pdf': exportPdf(S.report); break;
+      case 'export-print': exportPrint(S.report); break;
+      case 'save-preset': { const name = await ask('שם התבנית:', true, S.report.title); if (!name) return; await DB.set('settings', 'main', { reportPresets: [...(settings().reportPresets || []), { ...JSON.parse(JSON.stringify(S.report)), title: name }] }); toast('התבנית נשמרה', 'ok'); break; }
+      // הגדרות
+      case 'save-settings': { const d = readForm($('#setForm')); await DB.set('settings', 'main', d); toast('ההגדרות נשמרו', 'ok'); break; }
+      case 'role': DB.setDemoRole(el.dataset.v); break;
+      case 'reset-demo': if (await ask('לאפס את נתוני ההדגמה?')) DB.resetDemo(); break;
+      case 'logout': DB.signOut().then(() => location.reload()); break;
+      case 'backup': { const blob = new Blob([JSON.stringify(DB.exportAll(S), null, 2)], { type: 'application/json' }); const l = document.createElement('a'); l.href = URL.createObjectURL(blob); l.download = `גיבוי-מרכז-שליטה-${today()}.json`; l.click(); break; }
+      case 'notif': if ('Notification' in window) Notification.requestPermission().then((p) => { toast(p === 'granted' ? 'התראות דפדפן הופעלו' : 'ההרשאה לא ניתנה'); if (p === 'granted') notifyDue(true); }); break;
+    }
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); if (e.key === 'Enter' && e.target.id === 'cmt') { e.preventDefault(); $('[data-act=comment]').click(); } });
+
+  /* גרירת PDF לכל מקום בעמוד */
+  let dragDepth = 0;
+  window.addEventListener('dragenter', (e) => { if (!e.dataTransfer.types.includes('Files')) return; dragDepth++; if (!$('.page-drop')) document.body.insertAdjacentHTML('beforeend', '<div class="page-drop"><div>📥 שחרר כאן את קובץ ההזמנה</div></div>'); });
+  window.addEventListener('dragleave', () => { dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) { const p = $('.page-drop'); p && p.remove(); } });
+  window.addEventListener('dragover', (e) => { if (e.dataTransfer.types.includes('Files')) e.preventDefault(); });
+  window.addEventListener('drop', (e) => { if (!e.dataTransfer.files.length) return; e.preventDefault(); dragDepth = 0; const p = $('.page-drop'); p && p.remove(); handlePdf(e.dataTransfer.files[0]); });
+
+  /* התראות דפדפן — פעם ביום */
+  function notifyDue(force) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    const key = 'atlas-notified-' + today();
+    try { if (!force && localStorage.getItem(key)) return; localStorage.setItem(key, '1'); } catch (e) {}
+    const bad = computeAlerts().filter((a) => a.level === 'bad');
+    if (bad.length) new Notification('מרכז שליטה', { body: `${bad.length} התראות דחופות: ${bad.slice(0, 3).map((a) => a.title).join(' · ')}` });
+  }
+
+  /* ---------------- מסך כניסה ---------------- */
+  function loginView() {
+    $('#root').innerHTML = `<div class="login"><form class="box" id="loginForm"><div class="brand-logo" style="width:56px;height:56px;font-size:26px;color:#fff">✦</div>
+      <h1>מרכז שליטה</h1><p>הזמנות · הסכמים · משימות</p>
+      <div class="field"><label>אימייל</label><input name="email" type="email" required autocomplete="username"></div>
+      <div class="field"><label>סיסמה</label><input name="pw" type="password" required autocomplete="current-password"></div>
+      <button class="btn primary" style="width:100%;padding:13px">כניסה</button>
+      <button type="button" class="btn ghost" id="forgot" style="width:100%;margin-top:6px">שכחתי סיסמה</button></form></div>`;
+    $('#loginForm').onsubmit = async (e) => { e.preventDefault(); try { await DB.signIn(e.target.email.value, e.target.pw.value); location.reload(); } catch (err) { toast('פרטי כניסה שגויים', 'error'); } };
+    $('#forgot').onclick = async () => { const em = $('#loginForm').email.value; if (!em) return toast('הזן אימייל', 'error'); try { await DB.resetPassword(em); toast('נשלח מייל לאיפוס', 'ok'); } catch (e) { toast('שגיאה', 'error'); } };
+  }
+
+  /* ---------------- הפעלה ---------------- */
+  DB.init().then((user) => {
+    if (!user) return loginView();
+    ['orders', 'agreements', 'tasks', 'notes', 'activity'].forEach((c) => DB.subscribe(c, (arr) => { S[c] = arr; scheduleRender(); }));
+    DB.subscribe('settings', (arr) => { S.settingsDocs = arr; scheduleRender(); });
+    window.addEventListener('hashchange', () => { S.q = ''; const sr = $('#search-results'); sr && (sr.innerHTML = ''); render(); window.scrollTo(0, 0); });
+    let lastW = window.innerWidth; window.addEventListener('resize', () => { if ((lastW > 760) !== (window.innerWidth > 760)) render(); lastW = window.innerWidth; });
+    render();
+    setTimeout(() => notifyDue(false), 2000);
+  });
+})();
+
+</script>
+</body>
+</html>
