@@ -500,6 +500,34 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
 .log-sub { display: inline-block; font-size: 12px; color: #9a3412; background: var(--c-tasks-soft); border-radius: 6px; padding: 1px 7px; margin-bottom: 3px; cursor: pointer; }
 @media (max-width: 760px) { .sn-add input#subCmt { font-size: 16px; } }
 
+/* ---------- תצוגות פרויקטים ואנשי קשר ---------- */
+.vbar { gap: 10px; }
+.seg { display: inline-flex; background: var(--surface); border: 1px solid var(--border); border-radius: 11px; padding: 3px; }
+.seg button { border: 0; background: transparent; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-weight: 600; color: var(--muted); }
+.seg button.on { background: var(--text); color: #fff; }
+.vlbl { font-size: 13px; color: var(--muted); }
+.vcount { font-size: 13px; color: var(--muted); }
+.chip small { opacity: .65; margin-inline-start: 3px; }
+.letters { position: sticky; top: 70px; z-index: 5; display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; padding: 6px; background: var(--bg); }
+.letters a { min-width: 28px; height: 28px; padding: 0 6px; display: grid; place-items: center; border-radius: 8px; background: var(--surface); border: 1px solid var(--border); font-size: 13px; font-weight: 700; color: var(--text); text-decoration: none; }
+.letters a:hover { background: var(--text); color: #fff; }
+.g-head { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 16px; margin: 18px 0 10px; scroll-margin-top: 120px; }
+.g-dot { width: 10px; height: 10px; border-radius: 3px; }
+.g-row td { background: var(--surface-2); font-weight: 800; scroll-margin-top: 120px; }
+.ec-bar { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 12px; color: var(--muted); }
+.ec-bar .bar { flex: 1; }
+.mini-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 10px; }
+.mini-tags span { font-size: 11.5px; padding: 1px 8px; border-radius: 99px; background: var(--surface-2); border: 1px solid var(--border); color: var(--muted); }
+.warn-t { color: var(--c-warn); font-weight: 700; }
+.bad-t { color: var(--c-alert); font-style: normal; font-weight: 700; }
+.compact-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; margin-bottom: 8px; }
+.cpt { display: flex; align-items: center; gap: 8px; padding: 9px 12px; background: var(--surface); border-radius: 10px; border-inline-start: 4px solid var(--ec); box-shadow: 0 1px 3px rgba(0,0,0,.05); cursor: pointer; min-width: 0; }
+.cpt b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.cpt span { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.cpt .av { width: 22px; height: 22px; font-size: 11px; }
+.cpt:hover { background: var(--surface-2); }
+@media (max-width: 760px) { .seg button span { display: none; } .letters { top: 0; } .vbar select { flex: 1; min-width: 0; } }
+
 </style>
 </head>
 <body>
@@ -1715,16 +1743,135 @@ window.DEMO_SEED = function () {
     q.oninput = () => { const v = norm(q.value); $$('#pickList .pick-row').forEach((r) => { r.hidden = v && !r.dataset.s.includes(v); }); };
   }
 
-  /* --- עמוד פרויקטים --- */
+  /* --- תצוגות: פרויקטים ואנשי קשר --- */
+  const PROF_SYN = [[/^אדריכל(?!ות)/, 'אדריכלות'], [/^קונסטרוקטור/, 'קונסטרוקציה'], [/^מיזוג או?ו?יר/, 'מיזוג אוויר'], [/^(הנדסת )?דרכים/, 'הנדסת דרכים'],
+    [/^ע["״']?ע$|^עבודות עפר/, 'עבודות עפר'], [/^מתאם|^תיאום|^מתאמ/, 'תיאום ומתאמים'], [/^חשמל/, 'חשמל'], [/^מים וביוב|^אינסטלציה/, 'מים וביוב'], [/^פיקוח/, 'פיקוח'], [/^בקר/, 'בקרה']];
+  function normProf(p) {
+    p = String(p || '').replace(/\s+/g, ' ').trim(); if (!p) return '';
+    for (const [re, v] of PROF_SYN) if (re.test(p)) return v;
+    return p;
+  }
+  function personProf(p) {
+    const cnt = {};
+    S.orders.forEach((o) => { if (consultantMatch(o, p) && o.profession) { const k = normProf(o.profession); cnt[k] = (cnt[k] || 0) + 1; } });
+    const best = Object.entries(cnt).sort((a, b) => b[1] - a[1])[0];
+    return best ? best[0] : normProf((p.role || '').split(',')[0]);
+  }
+  const VKEY = 'atlas-view-';
+  const vget = (k, d) => { try { return localStorage.getItem(VKEY + k) || d; } catch (e) { return d; } };
+  const vset = (k, v) => { try { localStorage.setItem(VKEY + k, v); } catch (e) {} };
+  const heCmp = (a, b) => String(a || '').localeCompare(String(b || ''), 'he');
+  const firstLetter = (s) => { const c = String(s || '').trim().charAt(0); return /[א-ת]/.test(c) ? c : /[a-z]/i.test(c) ? 'A‑Z' : '#'; };
+  function groupBy(list, keyFn, order) {
+    const m = new Map(); list.forEach((x) => { const k = keyFn(x) || 'ללא'; if (!m.has(k)) m.set(k, []); m.get(k).push(x); });
+    const keys = [...m.keys()].sort(order || ((a, b) => (a === 'ללא') - (b === 'ללא') || heCmp(a, b)));
+    return keys.map((k) => [k, m.get(k)]);
+  }
+  function viewBar(page, views, sorts, cur, extra = '') {
+    return `<div class="toolbar vbar">
+      <div class="seg">${views.map(([k, l, ic]) => `<button class="${cur.view === k ? 'on' : ''}" data-act="vset" data-page="${page}" data-k="view" data-v="${k}" title="${l}">${ic} <span>${l}</span></button>`).join('')}</div>
+      <label class="vlbl">סידור:</label><select data-vsel="${page}-sort">${sorts.map(([k, l]) => `<option value="${k}" ${cur.sort === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
+      ${extra}</div>`;
+  }
+  const letterBar = (groups) => groups.length > 6 ? `<div class="letters">${groups.map(([k], i) => `<a href="#" data-act="jump" data-to="g-${i}">${esc(k)}</a>`).join('')}</div>` : '';
+  const groupHead = (k, n, i, color) => `<div class="g-head" id="g-${i}"><span class="g-dot" style="background:${color}"></span>${esc(k)}<span class="pill gray">${n}</span></div>`;
+
+  /* --- פרויקטים --- */
+  function projStats(p) {
+    const r = related('project', p.id);
+    const os = S.orders.filter((o) => o.projectId === p.id);
+    const act = os.filter(isActiveOrder);
+    const budget = act.reduce((s, o) => s + (o.budgetExVat || 0), 0), used = act.reduce((s, o) => s + (o.utilized || 0), 0);
+    const nextEnd = act.map((o) => o.endDate).filter(Boolean).sort()[0] || '';
+    const profs = [...new Set(os.map((o) => normProf(o.profession)).filter(Boolean))];
+    const open = r.tasks.filter((t) => t.status !== 'done');
+    return { r, os, act, budget, used, nextEnd, profs, open, late: open.filter((t) => t.dueDate && daysLeft(t.dueDate) < 0) };
+  }
   function viewProjects() {
-    const list = S.projects.filter((p) => match(p, S.q)).sort((a, b) => (a.status === 'done') - (b.status === 'done') || (a.name || '').localeCompare(b.name || '', 'he'));
-    const content = `<div class="ent-grid">${list.map((p) => { const r = related('project', p.id); const open = r.tasks.filter((t) => t.status !== 'done'); const late = open.filter((t) => t.dueDate && daysLeft(t.dueDate) < 0);
-      const ps = PROJECT_STATUS[p.status || 'active'];
+    const cur = { view: vget('proj-view', 'cards'), sort: vget('proj-sort', 'abc'), status: vget('proj-status', 'active'), prof: vget('proj-prof', '') };
+    const all = S.projects.map((p) => ({ p, st: projStats(p) }));
+    const profsAll = [...new Set(all.flatMap((x) => x.st.profs))].sort(heCmp);
+    let list = all.filter((x) => match(x.p, S.q))
+      .filter((x) => cur.status === 'all' || (cur.status === 'active' ? (x.p.status || 'active') !== 'done' : x.p.status === 'done'))
+      .filter((x) => !cur.prof || x.st.profs.includes(cur.prof));
+    const sorters = {
+      abc: (a, b) => heCmp(a.p.name, b.p.name),
+      owner: (a, b) => heCmp(a.p.manager || 'תתתת', b.p.manager || 'תתתת') || heCmp(a.p.name, b.p.name),
+      budget: (a, b) => b.st.budget - a.st.budget,
+      ending: (a, b) => (a.st.nextEnd || '9999').localeCompare(b.st.nextEnd || '9999'),
+      orders: (a, b) => b.st.os.length - a.st.os.length,
+    };
+    list.sort(sorters[cur.sort] || sorters.abc);
+    const groups = cur.sort === 'abc' ? groupBy(list, (x) => firstLetter(x.p.name)) : cur.sort === 'owner' ? groupBy(list, (x) => (x.p.manager || '').split(',')[0].trim() || 'ללא אחראי') : [['', list]];
+    const counts = { active: S.projects.filter((p) => (p.status || 'active') !== 'done').length, done: S.projects.filter((p) => p.status === 'done').length, all: S.projects.length };
+    const extra = `<div class="chips">${[['active', 'פעילים'], ['done', 'הסתיימו'], ['all', 'הכל']].map(([k, l]) => `<span class="chip ${cur.status === k ? 'on' : ''}" data-act="vset" data-page="proj" data-k="status" data-v="${k}">${l} <small>${counts[k]}</small></span>`).join('')}</div>
+      <select data-vsel="proj-prof"><option value="">כל המקצועות</option>${profsAll.map((x) => `<option ${cur.prof === x ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select>
+      <span class="spacer"></span><span class="vcount">${list.length} פרויקטים</span>`;
+    const card = ({ p, st }) => { const ps = PROJECT_STATUS[p.status || 'active']; const pc = pct(st.used, st.budget);
       return `<div class="ent-card" data-act="open" data-kind="ent-project" data-id="${p.id}" style="--ec:var(--c-report)">
-        <div class="row"><span class="ent-ic">🏗️</span><div style="flex:1;min-width:0"><b>${esc(p.name)}</b><div class="sub">${esc([p.code, p.manager].filter(Boolean).join(' · '))}</div></div><span class="pill ${ps.c}">${ps.l}</span></div>
-        <div class="ent-stats"><span><b>${open.length}</b> משימות פתוחות${late.length ? ` · <em>${late.length} באיחור</em>` : ''}</span><span><b>${r.orders.length}</b> הזמנות</span><span><b>${r.people.length}</b> אנשים</span></div></div>`; }).join('') || '<div class="empty">עדיין אין פרויקטים. לחץ "+ פרויקט חדש".</div>'}</div>`;
+        <div class="row"><div style="flex:1;min-width:0"><b>${esc(p.name)}</b><div class="sub">${esc([p.code, p.manager].filter(Boolean).join(' · ')) || '&nbsp;'}</div></div><span class="pill ${ps.c}">${ps.l}</span></div>
+        ${st.budget ? `<div class="ec-bar">${bar(pc)}<span>${pc}% · ${money(st.budget)}</span></div>` : ''}
+        <div class="ent-stats"><span><b>${st.act.length}</b>/${st.os.length} הזמנות פעילות</span><span><b>${st.open.length}</b> משימות${st.late.length ? ` · <em>${st.late.length} באיחור</em>` : ''}</span>
+          ${st.nextEnd ? `<span class="${daysLeft(st.nextEnd) <= settings().alertDays ? 'warn-t' : ''}">⏳ ${dfmt(st.nextEnd)}</span>` : ''}</div>
+        ${st.profs.length ? `<div class="mini-tags">${st.profs.slice(0, 4).map((x) => `<span>${esc(x)}</span>`).join('')}${st.profs.length > 4 ? `<span>+${st.profs.length - 4}</span>` : ''}</div>` : ''}</div>`; };
+    const row = ({ p, st }) => { const ps = PROJECT_STATUS[p.status || 'active']; const pc = pct(st.used, st.budget);
+      return `<tr data-act="open" data-kind="ent-project" data-id="${p.id}"><td class="strong">${esc(p.name)}<div class="sub">${esc(p.code || '')}</div></td><td>${esc(p.manager || '—')}</td>
+        <td><span class="pill ${ps.c}">${ps.l}</span></td><td class="num">${st.act.length} / ${st.os.length}</td><td class="num">${st.budget ? money(st.budget) : '—'}</td>
+        <td>${st.budget ? `${bar(pc)}<div class="sub">${pc}%</div>` : '—'}</td><td class="num">${st.nextEnd ? dfmt(st.nextEnd) : '—'}</td><td class="num">${st.open.length}${st.late.length ? ` <em class="bad-t">(${st.late.length})</em>` : ''}</td>
+        <td class="sub">${esc(st.profs.join(', '))}</td></tr>`; };
+    const thead = `<thead><tr><th>פרויקט</th><th>אחראי/ת</th><th>סטטוס</th><th>הזמנות פעילות</th><th>תקציב פעיל</th><th>ניצול</th><th>סיום קרוב</th><th>משימות</th><th>מקצועות</th></tr></thead>`;
+    let body;
+    if (!list.length) body = '<div class="empty">לא נמצאו פרויקטים. אפשר לשנות סינון או ללחוץ "+ פרויקט חדש".</div>';
+    else if (cur.view === 'table') body = `<div class="card table-wrap"><table class="tbl">${thead}<tbody>${groups.map(([k, l], i) => `${k ? `<tr class="g-row" id="g-${i}"><td colspan="9">${esc(k)} <span class="pill gray">${l.length}</span></td></tr>` : ''}${l.map(row).join('')}`).join('')}</tbody></table></div>`;
+    else if (cur.view === 'compact') body = groups.map(([k, l], i) => `${k ? groupHead(k, l.length, i, 'var(--c-report)') : ''}<div class="compact-grid">${l.map(({ p, st }) => `<div class="cpt" data-act="open" data-kind="ent-project" data-id="${p.id}" style="--ec:var(--c-report)"><b>${esc(p.name)}</b><span>${st.act.length}/${st.os.length} 📄 · ${st.open.length} ✅</span></div>`).join('')}</div>`).join('');
+    else body = groups.map(([k, l], i) => `${k ? groupHead(k, l.length, i, 'var(--c-report)') : ''}<div class="ent-grid">${l.map(card).join('')}</div>`).join('');
+    const content = viewBar('proj', [['cards', 'כרטיסים', '▦'], ['compact', 'מקוצר', '▤'], ['table', 'טבלה', '☰']],
+      [['abc', 'א‑ב'], ['owner', 'לפי אחראי/ת'], ['ending', 'סיום הזמנה קרוב'], ['budget', 'תקציב פעיל (גבוה→נמוך)'], ['orders', 'מספר הזמנות']], cur, extra)
+      + (cur.view !== 'table' && groups.length > 1 ? letterBar(groups) : '') + body;
     return shell(content, 'פרויקטים', 'כל פרויקט מרכז משימות, הזמנות, הסכמים ואנשים', `<button class="btn violet" data-act="new-project">+ פרויקט חדש</button>`);
   }
+
+  /* --- אנשי קשר --- */
+  function viewPeople() {
+    const cur = { view: vget('ppl-view', 'cards'), sort: vget('ppl-sort', 'prof'), type: vget('ppl-type', ''), act: vget('ppl-act', '') };
+    const all = S.people.map((p) => { const r = related('person', p.id); return { p, r, prof: personProf(p), actO: r.orders.filter(isActiveOrder).length, open: r.tasks.filter((t) => t.status !== 'done').length }; });
+    let list = all.filter((x) => match(x.p, S.q)).filter((x) => !cur.type || (x.p.type || 'אחר') === cur.type).filter((x) => !cur.act || x.actO > 0);
+    const sorters = { prof: (a, b) => heCmp(a.prof || 'תתת', b.prof || 'תתת') || heCmp(a.p.name, b.p.name), abc: (a, b) => heCmp(a.p.name, b.p.name),
+      type: (a, b) => PERSON_TYPES.indexOf(a.p.type || 'אחר') - PERSON_TYPES.indexOf(b.p.type || 'אחר') || heCmp(a.p.name, b.p.name),
+      orders: (a, b) => b.actO - a.actO || b.r.orders.length - a.r.orders.length, company: (a, b) => heCmp(a.p.company || 'תתת', b.p.company || 'תתת') || heCmp(a.p.name, b.p.name) };
+    list.sort(sorters[cur.sort] || sorters.prof);
+    const unit = cur.sort === 'prof' ? list.filter((x) => x.p.type === 'גורם ביחידה') : [];
+    if (unit.length) list = list.filter((x) => x.p.type !== 'גורם ביחידה');
+    const groups = [
+      ...(unit.length ? [['אנשי היחידה', unit]] : []),
+      ...(cur.sort === 'prof' ? groupBy(list, (x) => x.prof || 'ללא מקצוע', (a, b) => (a === 'ללא מקצוע') - (b === 'ללא מקצוע') || heCmp(a, b))
+        : cur.sort === 'abc' ? groupBy(list, (x) => firstLetter(x.p.name))
+          : cur.sort === 'type' ? groupBy(list, (x) => x.p.type || 'אחר', (a, b) => PERSON_TYPES.indexOf(a) - PERSON_TYPES.indexOf(b))
+            : cur.sort === 'company' ? groupBy(list, (x) => x.p.company || 'ללא חברה') : [['', list]]),
+    ];
+    const unmatched = [...new Set(S.orders.flatMap((o) => (o.consultants || []).map((c) => c.name)).filter(Boolean))].filter((n) => !S.people.some((p) => norm(p.name) === norm(n)));
+    const types = [...new Set(S.people.map((p) => p.type || 'אחר'))];
+    const extra = `<select data-vsel="ppl-type"><option value="">כל הסוגים</option>${PERSON_TYPES.filter((t) => types.includes(t)).map((t) => `<option ${cur.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select>
+      <span class="chip ${cur.act ? 'on' : ''}" data-act="vset" data-page="ppl" data-k="act" data-v="${cur.act ? '' : '1'}">רק עם הזמנה פעילה</span>
+      <span class="spacer"></span><span class="vcount">${list.length + unit.length} אנשי קשר</span>`;
+    const card = ({ p, r, prof, actO, open }) => `<div class="ent-card" data-act="open" data-kind="ent-person" data-id="${p.id}" style="--ec:${p.type === 'גורם ביחידה' ? 'var(--c-report)' : 'var(--c-agree)'}">
+      <div class="row">${avatar(p.name)}<div style="flex:1;min-width:0"><b>${esc(p.name)}</b><div class="sub">${esc([prof || p.role, p.company].filter(Boolean).join(' · ')) || '&nbsp;'}</div></div>${actO ? `<span class="pill ok">${actO} פעילות</span>` : ''}</div>
+      <div class="ent-stats"><span><b>${r.orders.length}</b> הזמנות</span><span><b>${r.projects.length}</b> פרויקטים</span><span><b>${open}</b> משימות</span></div>
+      ${p.phone ? `<div class="sub" style="margin-top:6px">📞 ${esc(p.phone)}</div>` : ''}</div>`;
+    const row = ({ p, r, prof, actO, open }) => `<tr data-act="open" data-kind="ent-person" data-id="${p.id}"><td class="strong"><div class="j-ass">${avatar(p.name)}${esc(p.name)}</div></td><td>${esc(prof || '—')}</td><td>${esc(p.company || '—')}</td><td>${esc(p.type || '—')}</td>
+      <td class="num">${actO} / ${r.orders.length}</td><td class="num">${r.projects.length}</td><td class="num">${open}</td><td class="num">${esc(p.phone || '')}</td></tr>`;
+    let body;
+    if (!list.length && !unit.length) body = '<div class="empty">לא נמצאו אנשי קשר.</div>';
+    else if (cur.view === 'table') body = `<div class="card table-wrap"><table class="tbl"><thead><tr><th>שם</th><th>מקצוע</th><th>חברה</th><th>סוג</th><th>הזמנות (פעילות/סה"כ)</th><th>פרויקטים</th><th>משימות</th><th>טלפון</th></tr></thead><tbody>
+      ${groups.map(([k, l], i) => `${k ? `<tr class="g-row" id="g-${i}"><td colspan="8">${esc(k)} <span class="pill gray">${l.length}</span></td></tr>` : ''}${l.map(row).join('')}`).join('')}</tbody></table></div>`;
+    else if (cur.view === 'compact') body = groups.map(([k, l], i) => `${k ? groupHead(k, l.length, i, 'var(--c-agree)') : ''}<div class="compact-grid">${l.map(({ p, prof, actO }) => `<div class="cpt" data-act="open" data-kind="ent-person" data-id="${p.id}" style="--ec:var(--c-agree)">${avatar(p.name)}<b>${esc(p.name)}</b><span>${actO ? actO + ' פעילות' : ''}</span></div>`).join('')}</div>`).join('');
+    else body = groups.map(([k, l], i) => `${k ? groupHead(k, l.length, i, 'var(--c-agree)') : ''}<div class="ent-grid">${l.map(card).join('')}</div>`).join('');
+    const content = `${unmatched.length ? `<div class="banner" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">💡 נמצאו ${unmatched.length} יועצים בהזמנות שעוד לא רשומים כאנשי קשר: <b>${unmatched.slice(0, 4).map(esc).join(', ')}${unmatched.length > 4 ? '…' : ''}</b><span style="flex:1"></span><button class="btn sm teal" data-act="import-consultants">הוסף אותם</button></div>` : ''}
+      ${viewBar('ppl', [['cards', 'כרטיסים', '▦'], ['compact', 'מקוצר', '▤'], ['table', 'טבלה', '☰']], [['prof', 'לפי מקצוע'], ['abc', 'א‑ב'], ['company', 'לפי חברה/משרד'], ['type', 'לפי סוג'], ['orders', 'הכי הרבה הזמנות פעילות']], cur, extra)}
+      ${cur.view !== 'table' && groups.length > 1 ? letterBar(groups) : ''}${body}`;
+    return shell(content, 'אנשי קשר', 'עובדים, יועצים, קבלנים וגורמים — וכל מה שקשור לכל אחד', `<button class="btn teal" data-act="new-person">+ איש קשר</button>`);
+  }
+
   function openProjectEditor(p = {}) {
     modal(p.id ? 'עריכת פרויקט' : 'פרויקט חדש', `<form id="projForm"><div class="form-grid">
       <div class="field full"><label>שם הפרויקט</label><input name="name" value="${esc(p.name || '')}" autofocus></div>
@@ -1738,19 +1885,6 @@ window.DEMO_SEED = function () {
   }
 
   /* --- עמוד אנשי קשר --- */
-  function viewPeople() {
-    const list = S.people.filter((p) => match(p, S.q)).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
-    const groups = PERSON_TYPES.map((ty) => [ty, list.filter((p) => (p.type || 'אחר') === ty)]).filter(([, l]) => l.length);
-    const unmatched = [...new Set(S.orders.flatMap((o) => (o.consultants || []).map((c) => c.name)).filter(Boolean))].filter((n) => !S.people.some((p) => norm(p.name) === norm(n)));
-    const content = `${unmatched.length ? `<div class="banner" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">💡 נמצאו ${unmatched.length} יועצים בהזמנות שעוד לא רשומים כאנשי קשר: <b>${unmatched.slice(0, 4).map(esc).join(', ')}${unmatched.length > 4 ? '…' : ''}</b><span style="flex:1"></span><button class="btn sm teal" data-act="import-consultants">הוסף אותם</button></div>` : ''}
-      ${groups.map(([ty, l]) => `<div class="section-t" style="margin-top:6px">${esc(ty)} <span class="pill gray">${l.length}</span></div>
-      <div class="ent-grid">${l.map((p) => { const r = related('person', p.id); const open = r.tasks.filter((t) => t.status !== 'done');
-        return `<div class="ent-card" data-act="open" data-kind="ent-person" data-id="${p.id}" style="--ec:var(--c-agree)">
-          <div class="row">${avatar(p.name)}<div style="flex:1;min-width:0"><b>${esc(p.name)}</b><div class="sub">${esc([p.role, p.company].filter(Boolean).join(' · '))}</div></div></div>
-          <div class="ent-stats"><span><b>${open.length}</b> משימות</span><span><b>${r.orders.length}</b> הזמנות</span><span><b>${r.projects.length}</b> פרויקטים</span></div>
-          ${p.phone ? `<div class="sub" style="margin-top:6px">📞 ${esc(p.phone)}</div>` : ''}</div>`; }).join('')}</div>`).join('') || '<div class="empty">עדיין אין אנשי קשר. לחץ "+ איש קשר".</div>'}`;
-    return shell(content, 'אנשי קשר', 'עובדים, יועצים, קבלנים וגורמים — וכל מה שקשור לכל אחד', `<button class="btn teal" data-act="new-person">+ איש קשר</button>`);
-  }
   function openPersonEditor(p = {}) {
     modal(p.id ? 'עריכת איש קשר' : 'איש קשר חדש', `<form id="personForm"><div class="form-grid">
       <div class="field"><label>שם מלא</label><input name="name" value="${esc(p.name || '')}" autofocus></div>
@@ -2174,6 +2308,7 @@ window.DEMO_SEED = function () {
     if (tg.subDue) { const t = byId('tasks', tg.tid); const x = (t.subtasks || []).find((y) => y.id === tg.subDue); const v = e.target.value;
       await updateSubs(tg.tid, (l) => { l.find((z) => z.id === tg.subDue).dueDate = v; }, `יעד לתת‑משימה "${x ? x.title : ''}" ${v ? 'נקבע ל‑' + dfmt(v) : 'הוסר'}`); return; }
     if (e.target.dataset.fsel) { S.f[e.target.dataset.fsel] = e.target.value; render(); }
+    if (e.target.dataset.vsel) { vset(e.target.dataset.vsel, e.target.value); render(); }
     if (e.target.dataset.r && e.target.tagName === 'SELECT') { S.report[e.target.dataset.r] = e.target.value; render(); }
   });
   document.addEventListener('click', async (e) => {
@@ -2228,6 +2363,8 @@ window.DEMO_SEED = function () {
         DB.log(ty === 'project' ? 'הוסיף/ה פרויקט' : 'הוסיף/ה איש קשר', ty, v); await addLink(id, ty, nid); break; }
       case 'more-nav': modal('תפריט', `<div class="more-nav">${NAV.map((x) => `<a href="#${x.id}" data-act="close-go">${ICONS[x.id === 'config' ? 'settings' : x.id]}<span>${x.label}</span></a>`).join('')}</div>`); break;
       case 'close-go': closeModal(); location.hash = el.getAttribute('href'); break;
+      case 'vset': vset(el.dataset.page + '-' + el.dataset.k, el.dataset.v); render(); break;
+      case 'jump': { const t = document.getElementById(el.dataset.to); t && t.scrollIntoView({ behavior: 'smooth', block: 'start' }); break; }
       case 'new-project': openProjectEditor(); break;
       case 'edit-project': openProjectEditor(byId('projects', id)); break;
       case 'save-project': { const d = readForm($('#projForm')); if (!d.name) return toast('חובה לכתוב שם', 'error');
