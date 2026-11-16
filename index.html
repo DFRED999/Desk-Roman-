@@ -528,6 +528,46 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
 .cpt:hover { background: var(--surface-2); }
 @media (max-width: 760px) { .seg button span { display: none; } .letters { top: 0; } .vbar select { flex: 1; min-width: 0; } }
 
+/* ---------- לטיפול · חשבונות · דרישות · סנכרון ---------- */
+.kpi.queue { background: linear-gradient(135deg, #f43f5e, #f97316); }
+.q-sec { margin-bottom: 18px; }
+.q-row { display: flex; align-items: center; gap: 14px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 12px; margin-bottom: 8px; cursor: pointer; background: var(--surface); flex-wrap: wrap; }
+.q-row:hover { background: var(--surface-2); }
+.q-chk { width: 18px; height: 18px; accent-color: var(--c-alert); cursor: pointer; }
+.q-main { flex: 1; min-width: 200px; }
+.q-main .sub, .q-row .sub { color: var(--muted); font-size: 12.5px; }
+.q-num { text-align: center; min-width: 84px; font-variant-numeric: tabular-nums; }
+.q-num b { display: block; font-size: 15px; }
+.q-num small { font-size: 11px; color: var(--muted); font-weight: 500; }
+.q-acts { display: flex; gap: 6px; flex-wrap: wrap; }
+.pipe { display: flex; align-items: stretch; gap: 6px; margin-bottom: 14px; overflow-x: auto; }
+.pipe-st { flex: 1; min-width: 96px; background: var(--surface); border-radius: 14px; padding: 12px; text-align: center; box-shadow: var(--shadow); cursor: pointer; border: 2px solid transparent; }
+.pipe-st.on { border-color: var(--c-orders); }
+.pipe-st span { font-size: 20px; }
+.pipe-st b { display: block; font-size: 24px; }
+.pipe-st small { color: var(--muted); font-size: 12px; }
+.pipe-arr { align-self: center; color: var(--muted); font-size: 22px; }
+.stepper { display: flex; gap: 4px; overflow-x: auto; }
+.step { flex: 1; min-width: 90px; border: 1px solid var(--border); background: var(--surface-2); border-radius: 12px; padding: 10px 6px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.step span { font-size: 18px; }
+.step b { font-size: 13px; }
+.step small { font-size: 11px; color: var(--muted); min-height: 14px; }
+.step.done { background: var(--c-ok-soft); border-color: #9fdcb5; }
+.step.cur { background: var(--c-orders); border-color: var(--c-orders); color: #fff; }
+.step.cur small { color: #fff; }
+.merge-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 6px; }
+.merge-row small { opacity: .7; }
+.sync-list { max-height: 50vh; overflow: auto; }
+.sync-row { padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 14px; }
+.sync-row label { cursor: pointer; }
+.sync-diffs { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 4px; font-size: 12.5px; color: var(--muted); }
+.sync-diffs s { color: var(--c-alert); }
+.sync-diffs b { color: var(--c-ok); }
+@media (max-width: 760px) { .q-acts { width: 100%; } .q-num { min-width: 70px; } }
+.kpis { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+.q-sec .card-h { flex-wrap: wrap; row-gap: 8px; }
+@media (max-width: 760px) { .kpis { grid-template-columns: 1fr 1fr; } }
+
 </style>
 </head>
 <body>
@@ -620,7 +660,7 @@ window.DEMO_SEED = function () {
    ========================================================== */
 (function (global) {
   'use strict';
-  const COLLECTIONS = ['orders', 'agreements', 'tasks', 'notes', 'activity', 'settings', 'users', 'projects', 'people'];
+  const COLLECTIONS = ['orders', 'agreements', 'tasks', 'notes', 'activity', 'settings', 'users', 'projects', 'people', 'invoices', 'demands'];
   const LS_KEY = 'atlas-command-demo-v1';
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   const nowISO = () => new Date().toISOString();
@@ -735,7 +775,7 @@ window.DEMO_SEED = function () {
   };
 
   /* גיבוי ושחזור */
-  const BACKUP_COLS = ['orders', 'agreements', 'tasks', 'notes', 'projects', 'people'];
+  const BACKUP_COLS = ['orders', 'agreements', 'tasks', 'notes', 'projects', 'people', 'invoices', 'demands'];
   DB.exportAll = function (state) {
     const out = { exportedAt: nowISO() };
     BACKUP_COLS.forEach((c) => { out[c] = state[c] || []; });
@@ -772,6 +812,16 @@ window.DEMO_SEED = function () {
       onProgress && onProgress(Math.min(i + 100, items.length), items.length);
     }
     return items.length;
+  };
+  /** כתיבה מרוכזת של רשומות שלמות [col, id, obj] */
+  DB.bulkWrite = async function (items, onProgress) {
+    const rows = items.map(([col, id, obj]) => { const { id: _x, ...rest } = obj; return [col, id, clean(rest)]; });
+    if (!useFirebase) { rows.forEach(([col, id, rest]) => { demo[col] = demo[col] || {}; demo[col][id] = rest; }); saveDemo(); [...new Set(rows.map((x) => x[0]))].forEach(emit); return rows.length; }
+    for (let i = 0; i < rows.length; i += 150) {
+      const upd = {}; rows.slice(i, i + 150).forEach(([col, id, rest]) => { upd[col + '/' + id] = rest; });
+      await rt.ref().update(upd); onProgress && rows.length > 150 && onProgress(Math.min(i + 150, rows.length), rows.length);
+    }
+    return rows.length;
   };
   DB.importAll = async function (data, state) { return DB.importPlan(DB.planImport(data, state || {})); };
 
@@ -909,7 +959,7 @@ window.DEMO_SEED = function () {
 
   /* ---------------- מצב ---------------- */
   const S = {
-    orders: [], agreements: [], tasks: [], notes: [], activity: [], settingsDocs: [], projects: [], people: [],
+    orders: [], agreements: [], tasks: [], notes: [], activity: [], settingsDocs: [], projects: [], people: [], invoices: [], demands: [],
     route: 'dashboard', q: '',
     f: { orderOwner: 'all', orderProject: 'all', orderStatus: 'all', agreeStatus: 'all', taskAssignee: 'all', taskPriority: 'all', taskLink: 'all', taskView: 'kanban', sort: {} },
   };
@@ -947,15 +997,23 @@ window.DEMO_SEED = function () {
     settings: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
     projects: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>',
     people: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M17 11a3 3 0 1 0 0-6M22 21a6 6 0 0 0-4-5.6"/></svg>',
+    queue: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z"/></svg>',
+    invoices: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 1 .7V2l-1 .7-3-2-3 2-3-2-3 2-3-2z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
+    demands: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M9 14l2 2 4-4"/></svg>',
+    owners: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1M19 3l2 2-4 4"/></svg>',
     bell: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
     search: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>',
   };
   const NAV = [
     { id: 'dashboard', label: 'דשבורד', color: '#a78bfa' },
+    { id: 'queue', label: 'לטיפול', color: '#f87171' },
     { id: 'orders', label: 'הזמנות עבודה', color: '#60a5fa' },
+    { id: 'invoices', label: 'חשבונות', color: '#93c5fd' },
+    { id: 'demands', label: 'דרישות', color: '#a78bfa' },
     { id: 'agreements', label: 'הסכמים וחוזים', color: '#34d399' },
     { id: 'projects', label: 'פרויקטים', color: '#c084fc' },
     { id: 'people', label: 'אנשי קשר', color: '#2dd4bf' },
+    { id: 'owners', label: 'מסך אחראי', color: '#5eead4' },
     { id: 'tasks', label: 'משימות', color: '#fbbf24' },
     { id: 'notes', label: 'פיתקיות', color: '#f472b6' },
     { id: 'reports', label: 'דוחות', color: '#c4b5fd' },
@@ -974,6 +1032,7 @@ window.DEMO_SEED = function () {
   function orderStatus(o) {
     const st = settings();
     if (o.cancelled) return { k: 'cancelled', l: 'בוטלה', c: 'gray' };
+    if (o.closed) return { k: 'closed', l: 'נסגרה', c: 'gray' };
     if (o.linkedTo) return { k: 'linked', l: 'הועברה להמשך', c: 'violet' };
     const dl = daysLeft(o.endDate);
     if (dl == null) return { k: 'active', l: 'פעילה', c: 'ok' };
@@ -1030,6 +1089,8 @@ window.DEMO_SEED = function () {
       if (dl < 0) out.push({ key: 'to-' + t.id, level: 'bad', ic: '⏰', bg: 'var(--c-tasks-soft)', title: `משימה באיחור: ${t.title}`, sub: `יעד ${dfmt(t.dueDate)} · ${t.assignee || ''}`, days: dl, open: ['task', t.id] });
       else if (dl <= 1) out.push({ key: 'td-' + t.id, level: 'info', ic: '✅', bg: 'var(--c-tasks-soft)', title: `${dl === 0 ? 'היום' : 'מחר'}: ${t.title}`, sub: t.assignee || '', days: dl, open: ['task', t.id] });
     });
+    S.invoices.filter(invStuck).forEach((i) => { const o = invOrder(i); out.push({ key: 'is-' + i.id + '-' + i.status, level: 'warn', ic: '🧾', bg: 'var(--c-orders-soft)',
+      title: `חשבון תקוע: ${i.label || ''} · הזמנה ${o.orderNumber || ''}`, sub: `${(INV_ST[i.status] || {}).l || ''} כבר ${invDays(i)} ימים · ${o.supplier || ''}`, days: null, pct: invDays(i), open: ['invoice', i.id] }); });
     const rank = { bad: 0, warn: 1, info: 2 };
     return out.filter((a) => !snoozed(a.key)).sort((a, b) => rank[a.level] - rank[b.level] || (a.days ?? 999) - (b.days ?? 999));
   }
@@ -1047,7 +1108,7 @@ window.DEMO_SEED = function () {
   function shell(content, title, sub, actions = '') {
     const alerts = computeAlerts();
     const openTasks = S.tasks.filter((t) => t.status !== 'done').length;
-    const counts = { tasks: openTasks, dashboard: alerts.filter((a) => a.level === 'bad').length };
+    const counts = { tasks: openTasks, dashboard: alerts.filter((a) => a.level === 'bad').length, queue: queueCount(), invoices: S.invoices.filter(invStuck).length };
     const u = DB.user;
     return `<div class="app">
       <aside class="sidebar">
@@ -1072,6 +1133,7 @@ window.DEMO_SEED = function () {
         return `<a href="#${id}" class="${S.route === id ? 'active' : ''}">${ICONS[id]}<span>${x.label.split(' ')[0]}</span>${counts[id] ? `<span class="count">${counts[id]}</span>` : ''}</a>`; }).join('')}
         <a href="#" data-act="more-nav" class="${['orders', 'agreements', 'people', 'reports', 'config'].includes(S.route) ? 'active' : ''}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>עוד</span></a></nav>
       <button class="fab" data-act="fab">+</button>
+      <input type="file" id="syncFile" accept=".xlsx,.xlsm,.xls" hidden>
       <div class="fab-menu" id="fabmenu">
         <button class="btn orange" data-act="quick-task">✅ משימה מהירה</button>
         <button class="btn pink" data-act="quick-note">🗒️ פיתקית</button>
@@ -1108,6 +1170,7 @@ window.DEMO_SEED = function () {
         <div class="kpi money" data-go="orders"><div class="lbl">ניצול תקציב הזמנות</div><div class="val">${pct(used, budget)}%</div><div class="meta">${money(used)} נוצלו</div></div>
         <div class="kpi agree" data-go="agreements"><div class="lbl">הסכמים בתוקף</div><div class="val">${activeA.length}</div><div class="meta">ערך יעד ${money(target)}</div></div>
         <div class="kpi tasks" data-go="tasks"><div class="lbl">משימות פתוחות</div><div class="val">${open.length}</div><div class="meta">${overdue.length ? `${overdue.length} באיחור` : 'אין איחורים'}</div></div>
+        ${(() => { const q = queueData(); const n2 = q.expired.length + q.stuck.length; return n2 ? `<div class="kpi queue" data-go="queue"><div class="lbl">לטיפול</div><div class="val">${n2}</div><div class="meta">${q.expired.length} פג תוקף עם יתרה · ${q.stuck.length} חשבונות תקועים</div></div>` : ''; })()}
         <div class="kpi alerts" data-act="alerts"><div class="lbl">התראות</div><div class="val">${alerts.length}</div><div class="meta">${alerts.filter((a) => a.level === 'bad').length} דחופות · ${st.alertDays} ימים מראש</div></div>
       </div>
       <div class="grid dash-2">
@@ -1184,7 +1247,7 @@ window.DEMO_SEED = function () {
       .filter((o) => S.f.orderOwner === 'all' || (o.owner || '') === S.f.orderOwner)
       .filter((o) => S.f.orderProject === 'all' || (o.projectId || '') === S.f.orderProject)
       .filter((o) => { const k = orderStatus(o).k;
-      return fs === 'all' || (fs === 'active' && ['active', 'soon', 'ending'].includes(k)) || (fs === 'ending' && ['soon', 'ending'].includes(k)) || (fs === 'closed' && ['ended', 'linked', 'cancelled'].includes(k)); });
+      return fs === 'all' || (fs === 'active' && ['active', 'soon', 'ending'].includes(k)) || (fs === 'ending' && ['soon', 'ending'].includes(k)) || (fs === 'closed' && ['ended', 'linked', 'cancelled', 'closed'].includes(k)); });
     rows = sortRows(rows.sort((a, b) => (a.endDate || '').localeCompare(b.endDate || '')), 'orders', ORDER_COLS);
     const chips = [['all', 'הכל'], ['active', 'פעילות'], ['ending', 'מסתיימות בקרוב'], ['closed', 'סגורות / הועברו']];
     const totB = rows.reduce((s, o) => s + (o.budgetExVat || 0), 0);
@@ -1203,7 +1266,7 @@ window.DEMO_SEED = function () {
         <div class="row"><span class="t">${esc(o.orderNumber)}</span><span class="pill ${s.c}">${s.l}</span></div>
         <div class="m">${esc(o.supplier || '')} · דרישה ${esc(o.demandNumber || '—')}</div>
         <div class="m">${money(o.budgetExVat)} · ${dfmt(o.startDate)} – ${dfmt(o.endDate)}</div><div style="margin-top:8px">${bar(p)}</div></div>`; }).join('') || '<div class="empty">לא נמצאו הזמנות</div>'}</div>`;
-    return shell(content, 'הזמנות עבודה', 'מעקב תקציב, תוקף, הגדלות, הארכות והזמנות המשך', `<button class="btn primary" data-act="new-order">+ הזמנה חדשה</button>`);
+    return shell(content, 'הזמנות עבודה', 'מעקב תקציב, תוקף, הגדלות, הארכות והזמנות המשך', `<button class="btn" data-act="sync-pick">🔄 סנכרון מאקסל</button><button class="btn primary" data-act="new-order">+ הזמנה חדשה</button>`);
   }
 
   function orderForm(o = {}, found = []) {
@@ -1264,6 +1327,8 @@ window.DEMO_SEED = function () {
     } else {
       d.history = [{ type: 'create', date: today(), note: ed.prev._fromPdf ? 'נקלט מקובץ PDF' : 'נוצרה ידנית' }];
       const id = await DB.add('orders', d); DB.log('הוסיף/ה הזמנה', 'order', d.orderNumber);
+      if (S._demOrder) { const dm = byId('demands', S._demOrder.id); if (dm) { const l = (dm.pendingItems || []).slice(); const it = l.splice(S._demOrder.k, 1)[0];
+        await DB.update('demands', dm.id, { pendingItems: l, removedItems: [...(dm.removedItems || []), it ? it.title : ''] }); } S._demOrder = null; }
       if (d.parentId) {
         const p = byId('orders', d.parentId);
         if (p) await DB.update('orders', p.id, { linkedTo: id, history: [...(p.history || []), { type: 'link', date: today(), note: `הועברה להזמנת המשך ${d.orderNumber}` }] });
@@ -1273,7 +1338,7 @@ window.DEMO_SEED = function () {
   }
 
   function historyHTML(h = []) {
-    const L = { create: 'נוצרה', increase: 'הגדלה', decrease: 'הפחתה', extend: 'הארכת תוקף', version: 'גרסה חדשה', link: 'קישור להמשך', note: 'הערה', invoice: 'חשבון' };
+    const L = { create: 'נוצרה', increase: 'הגדלה', decrease: 'הפחתה', extend: 'הארכת תוקף', version: 'גרסה חדשה', link: 'קישור להמשך', note: 'הערה', invoice: 'חשבון', close: 'נסגרה', reopen: 'נפתחה מחדש' };
     return h.length ? `<div class="timeline">${h.slice().reverse().map((x) => `<div class="tl-item ${x.type}"><div><b>${L[x.type] || x.type}</b>
       ${x.amount ? ` · ${x.type === 'decrease' ? '−' : '+'}${money(x.amount)}` : ''}${x.newEnd ? ` · עד ${dfmt(x.newEnd)}` : ''}${x.version != null ? ` · גרסה ${esc(x.version)}` : ''}</div>
       ${x.note ? `<div>${esc(x.note)}</div>` : ''}<div class="d">${dfmt(x.date)}${x.by ? ' · ' + esc(x.by) : ''}</div></div>`).join('')}</div>` : '<div class="empty" style="padding:12px">אין שינויים</div>';
@@ -1305,12 +1370,14 @@ window.DEMO_SEED = function () {
       ${o.consultants && o.consultants.length ? `<div class="section-t">👷 יועצים / נותני שירות</div><table class="tbl"><thead><tr><th>שם</th><th>שעות</th><th>תעריף</th><th>סה"כ</th></tr></thead><tbody>
         ${o.consultants.map((c) => `<tr><td>${esc(c.name)}</td><td class="num">${numFmt(c.hours)}</td><td class="num">${money(c.rate)}</td><td class="num">${money(c.total)}</td></tr>`).join('')}</tbody></table>` : ''}
       ${ch.length > 1 ? `<div class="section-t">🔗 שרשרת הזמנות</div><div class="chips">${ch.map((x) => `<span class="chip ${x.id === id ? 'on' : ''}" data-act="open" data-kind="order" data-id="${x.id}">${esc(x.orderNumber)} (${dfmt(x.startDate)}–${dfmt(x.endDate)})</span>`).join(' ← ')}</div>` : ''}
-      <div class="section-t">🕓 היסטוריית שינויים</div>${historyHTML(o.history)}
+      ${orderInvoicesHTML(o)}
+      <div class="section-t">🕓 היסטוריית שינויים</div>${historyHTML(ordersInvoices(o.id).length ? (o.history || []).filter((h) => h.type !== 'invoice') : o.history)}
       <div class="section-t">✅ משימות קשורות <button class="btn sm orange" data-act="task-for" data-kind="order" data-id="${id}" style="margin-inline-start:auto">+ משימה</button></div>
       ${tasks.length ? tasks.map(taskCard).join('') : '<div class="empty" style="padding:12px">אין משימות</div>'}
       ${o.notes ? `<div class="section-t">📝 הערות</div><div style="white-space:pre-wrap">${esc(o.notes)}</div>` : ''}`;
     modal(`הזמנה ${esc(o.orderNumber)}${o.version ? ` · גרסה ${esc(o.version)}` : ''}`, body, `
       <button class="btn violet" data-act="open" data-kind="ent-order" data-id="${id}">🗂 תיק מלא</button>
+      ${o.closed ? `<button class="btn" data-act="reopen-order" data-id="${id}">↺ פתיחה מחדש</button>` : `<button class="btn" data-act="close-order" data-id="${id}">✔ סגירת הזמנה</button>`}
       <button class="btn primary" data-act="edit-order" data-id="${id}">✏️ עריכה</button>
       <button class="btn" data-act="change" data-col="orders" data-type="increase" data-id="${id}">⬆ הגדלה</button>
       <button class="btn" data-act="change" data-col="orders" data-type="decrease" data-id="${id}">⬇ הפחתה</button>
@@ -1662,7 +1729,8 @@ window.DEMO_SEED = function () {
     return l.filter((x) => LINK_T[x.type] && entRec(x.type, x.id));
   }
   const hasLink = (t, type, id) => linksOf(t).some((x) => x.type === type && x.id === id);
-  const consultantMatch = (o, p) => !!(o && p && p.name && ((o.consultants || []).some((c) => norm(c.name) === norm(p.name)) || norm(o.supplier) === norm(p.name) || (o.owner && norm(o.owner) === norm(p.name))));
+  const consultantMatch = (o, p) => { if (!o || !p || !p.name) return false; const nm = [p.name, ...(p.aliases || [])].map(norm);
+    return (o.consultants || []).some((c) => nm.includes(norm(c.name))) || (!!o.supplier && nm.includes(norm(o.supplier))) || (!!o.owner && nm.includes(norm(o.owner))); };
   function linkChip(x, tid) {
     const T = LINK_T[x.type] || { i: '#' };
     return `<span class="lchip lc-${x.type}" data-act="open" data-kind="ent-${x.type}" data-id="${esc(x.id)}">${T.i} ${esc(entName(x.type, x.id))}${tid ? `<b data-act="unlink" data-id="${tid}" data-type="${x.type}" data-lid="${esc(x.id)}" title="הסר קישור">×</b>` : ''}</span>`;
@@ -1869,7 +1937,7 @@ window.DEMO_SEED = function () {
     const content = `${unmatched.length ? `<div class="banner" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">💡 נמצאו ${unmatched.length} יועצים בהזמנות שעוד לא רשומים כאנשי קשר: <b>${unmatched.slice(0, 4).map(esc).join(', ')}${unmatched.length > 4 ? '…' : ''}</b><span style="flex:1"></span><button class="btn sm teal" data-act="import-consultants">הוסף אותם</button></div>` : ''}
       ${viewBar('ppl', [['cards', 'כרטיסים', '▦'], ['compact', 'מקוצר', '▤'], ['table', 'טבלה', '☰']], [['prof', 'לפי מקצוע'], ['abc', 'א‑ב'], ['company', 'לפי חברה/משרד'], ['type', 'לפי סוג'], ['orders', 'הכי הרבה הזמנות פעילות']], cur, extra)}
       ${cur.view !== 'table' && groups.length > 1 ? letterBar(groups) : ''}${body}`;
-    return shell(content, 'אנשי קשר', 'עובדים, יועצים, קבלנים וגורמים — וכל מה שקשור לכל אחד', `<button class="btn teal" data-act="new-person">+ איש קשר</button>`);
+    return shell(content, 'אנשי קשר', 'עובדים, יועצים, קבלנים וגורמים — וכל מה שקשור לכל אחד', `<button class="btn" data-act="merge-tool">🧹 איחוד כפילויות</button><button class="btn teal" data-act="new-person">+ איש קשר</button>`);
   }
 
   function openProjectEditor(p = {}) {
@@ -1919,7 +1987,7 @@ window.DEMO_SEED = function () {
     // יומן משולב
     const feed = [];
     r.tasks.forEach((t) => (t.comments || []).filter((c) => c.type !== 'system').forEach((c) => feed.push({ at: c.at, by: c.by, text: c.text, type: c.type, src: `${keyOf(t)} ${t.title}` + (c.subId ? (() => { const si = (t.subtasks || []).findIndex((y) => y.id === c.subId); return si >= 0 ? ` ↳ ${t.subtasks[si].title}` : ''; })() : ''), kind: 'task', id: t.id })));
-    ordersAll.forEach((o) => (o.history || []).forEach((h) => feed.push({ at: h.date, by: h.by || '', text: ({ create: 'נוצרה', increase: 'הגדלה ' + money(h.amount), decrease: 'הפחתה ' + money(h.amount), extend: 'הארכה עד ' + dfmt(h.newEnd), version: 'גרסה ' + (h.version || ''), link: 'קישור להמשך', note: '', invoice: 'חשבון' })[h.type] + (h.note ? ' — ' + h.note : ''), type: 'order', src: 'הזמנה ' + o.orderNumber, kind: 'order', id: o.id })));
+    ordersAll.forEach((o) => (o.history || []).forEach((h) => feed.push({ at: h.date, by: h.by || '', text: ({ create: 'נוצרה', increase: 'הגדלה ' + money(h.amount), decrease: 'הפחתה ' + money(h.amount), extend: 'הארכה עד ' + dfmt(h.newEnd), version: 'גרסה ' + (h.version || ''), link: 'קישור להמשך', note: '', invoice: 'חשבון', close: 'נסגרה', reopen: 'נפתחה מחדש' })[h.type] + (h.note ? ' — ' + h.note : ''), type: 'order', src: 'הזמנה ' + o.orderNumber, kind: 'order', id: o.id })));
     feed.sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
     const sec = (title, n, html, act = '') => `<div class="ent-sec"><div class="ent-sec-h"><h4>${title}</h4><span class="pill gray">${n}</span><span style="flex:1"></span>${act}</div>${html}</div>`;
     const presetLinks = type === 'tag' ? [] : [{ type, id }];
@@ -1952,6 +2020,493 @@ window.DEMO_SEED = function () {
     modal(`🗂 תיק ${T.l}`, body, `${editBtn}<button class="btn" data-act="ent-report" data-type="${type}" data-id="${esc(id)}">⬇ דוח לתיק</button>
       <div class="spacer"></div>${type === 'project' || type === 'person' ? `<button class="btn danger" data-act="del" data-col="${LINK_T[type].col}" data-id="${id}">מחיקה</button>` : ''}`, 'wide ent-modal');
     S._openDetail = ['ent-' + type, id];
+  }
+
+  /* ==========================================================
+     חשבונות · דרישות · לטיפול · אחראים · איחוד אנשי קשר · סנכרון אקסל
+     ========================================================== */
+  const INV_ST = {
+    received: { l: 'התקבל', c: 'blue', i: '📥' }, checked: { l: 'נבדק', c: 'violet', i: '🔍' }, signing: { l: 'בחתימה', c: 'warn', i: '✍️' },
+    submitted: { l: 'הוגש לתשלום', c: 'warn', i: '📤' }, paid: { l: 'שולם', c: 'ok', i: '✅' }, rejected: { l: 'הוחזר לתיקון', c: 'bad', i: '↩️' }, archived: { l: 'היסטורי', c: 'gray', i: '🗄️' },
+  };
+  const INV_FLOW = ['received', 'checked', 'signing', 'submitted', 'paid'];
+  const INV_OPEN = ['received', 'checked', 'signing', 'submitted', 'rejected'];
+  const isClosedOrder = (o) => !!(o.closed || o.cancelled || o.linkedTo);
+  const orderBalance = (o) => (o.budgetExVat || 0) - (o.utilized || 0);
+  const invDays = (i) => (i.statusAt ? -daysLeft(String(i.statusAt).slice(0, 10)) : null);
+  const invStuck = (i) => INV_OPEN.includes(i.status) && invDays(i) != null && invDays(i) > (settings().invoiceStuckDays || 14);
+  const invOrder = (i) => byId('orders', i.orderId) || S.orders.find((o) => o.orderNumber === i.orderNumber) || {};
+  const ordersInvoices = (oid) => S.invoices.filter((i) => i.orderId === oid).sort((a, b) => String(a.label || '').localeCompare(String(b.label || ''), 'he', { numeric: true }));
+  const personNames = (p) => [p.name, ...(p.aliases || [])].map(norm);
+  const unitPeople = () => S.people.filter((p) => p.type === 'גורם ביחידה').sort((a, b) => heCmp(a.name, b.name));
+  const ownerMatch = (o, owner) => !owner || (o.owner && norm(o.owner) === norm(owner)) || (() => { const p = S.people.find((x) => personNames(x).includes(norm(owner))); return p && o.owner && personNames(p).includes(norm(o.owner)); })();
+  const nextInvLabel = (oid) => `ח"ח ${ordersInvoices(oid).filter((i) => /^ח"ח/.test(i.label || '')).length + 1}`;
+
+  /* ---------- לטיפול ---------- */
+  function queueData(owner) {
+    const st = settings(); const t = today();
+    const own = (o) => ownerMatch(o, owner);
+    const snoozed = (o) => o.queueSnooze && o.queueSnooze >= t;
+    const expired = S.orders.filter((o) => own(o) && !isClosedOrder(o) && o.endDate && o.endDate < t && orderBalance(o) > 500 && !snoozed(o))
+      .sort((a, b) => (b.endDate || '').localeCompare(a.endDate || ''));
+    const soon = S.orders.filter((o) => own(o) && !isClosedOrder(o) && o.endDate && o.endDate >= t && daysLeft(o.endDate) <= st.warnDays && orderBalance(o) > 500 && !snoozed(o))
+      .sort((a, b) => a.endDate.localeCompare(b.endDate));
+    const stuck = S.invoices.filter((i) => invStuck(i) && own(invOrder(i))).sort((a, b) => invDays(b) - invDays(a));
+    const pend = S.demands.filter((d) => (d.pendingItems || []).length && (!owner || (d.owner && norm(d.owner) === norm(owner))));
+    return { expired, soon, stuck, pend };
+  }
+  function queueCount() { const q = queueData(); return q.expired.length + q.stuck.length; }
+  function queueHTML(owner, opts = {}) {
+    const q = queueData(owner); const sel = S._qsel || (S._qsel = new Set());
+    const oRow = (o, kind) => { const bal = orderBalance(o); const dl = daysLeft(o.endDate);
+      return `<div class="q-row" data-act="open" data-kind="order" data-id="${o.id}">
+        ${kind === 'expired' ? `<input type="checkbox" class="q-chk" data-qsel="${o.id}" ${sel.has(o.id) ? 'checked' : ''} aria-label="בחר">` : ''}
+        <div class="q-main"><b>${esc(o.orderNumber)}</b> <span class="sub">${esc(o.supplier || '')}${o.profession ? ' · ' + esc(o.profession) : ''}</span>
+          <div class="sub">${esc((byId('projects', o.projectId) || {}).name || o.description || '')}${o.owner ? ' · 👤 ' + esc(o.owner) : ''}</div></div>
+        <div class="q-num"><b>${money(bal)}</b><small>יתרה (${pct(bal, o.budgetExVat)}%)</small></div>
+        <div class="q-num ${kind === 'expired' ? 'bad-t' : 'warn-t'}"><b>${kind === 'expired' ? Math.abs(dl) : dl}</b><small>${kind === 'expired' ? 'ימים מאז הסיום' : 'ימים לסיום'}</small></div>
+        <div class="q-acts">
+          <button class="btn sm" data-act="change" data-col="orders" data-type="extend" data-id="${o.id}">📅 הארכה</button>
+          <button class="btn sm" data-act="link-order" data-id="${o.id}">🔗 המשך</button>
+          <button class="btn sm" data-act="close-order" data-id="${o.id}">✔ סגירה</button>
+          <button class="btn sm ghost" data-act="q-snooze" data-id="${o.id}" title="להזכיר בעוד שבוע">💤</button></div></div>`; };
+    const sec = (title, n, color, body, extra = '') => `<div class="card q-sec"><div class="card-h"><span class="tag" style="background:${color}"></span><h2>${title}</h2><span class="pill gray">${n}</span><div class="spacer"></div>${extra}</div>${body}</div>`;
+    const lim = (arr, k) => (S._qmore === k ? arr : arr.slice(0, opts.limit || 25));
+    const more = (arr, k) => arr.length > (opts.limit || 25) && S._qmore !== k ? `<button class="btn sm" data-act="q-more" data-v="${k}" style="margin-top:8px">הצג את כל ה‑${arr.length}</button>` : '';
+    const nSel = q.expired.filter((o) => sel.has(o.id)).length;
+    return `
+      ${sec('⛔ פג תוקף ונשארה יתרה', q.expired.length, 'var(--c-alert)', (lim(q.expired, 'e').map((o) => oRow(o, 'expired')).join('') || '<div class="empty" style="padding:14px">🎉 אין הזמנות פתוחות שפג תוקפן</div>') + more(q.expired, 'e'),
+        q.expired.length ? `<span class="sub">סה"כ ${money(q.expired.reduce((s, o) => s + orderBalance(o), 0))}</span>
+          <button class="btn sm" data-act="q-selall">${nSel ? 'נקה בחירה' : 'בחר הכל'}</button>${nSel ? `<button class="btn sm danger" data-act="q-close-sel">✔ סגור ${nSel} נבחרות</button>` : ''}` : '')}
+      ${sec('⏳ מסתיימות בקרוב עם יתרה', q.soon.length, 'var(--c-warn)', lim(q.soon, 's').map((o) => oRow(o, 'soon')).join('') + more(q.soon, 's') || '<div class="empty" style="padding:14px">אין</div>')}
+      ${sec('🧾 חשבונות תקועים', q.stuck.length, 'var(--c-orders)', (q.stuck.map(invRow).join('') || `<div class="empty" style="padding:14px">אין חשבון שתקוע יותר מ‑${settings().invoiceStuckDays || 14} ימים</div>`))}
+      ${sec('📋 דרישות שממתינות להזמנה', q.pend.reduce((s, d) => s + d.pendingItems.length, 0), 'var(--c-report)', q.pend.map((d) => `<div class="q-row" data-act="open" data-kind="demand" data-id="${d.id}">
+        <div class="q-main"><b>דרישה ${esc(d.demandNumber || '—')}</b> <span class="sub">${esc((byId('projects', d.projectId) || {}).name || '')}${d.owner ? ' · 👤 ' + esc(d.owner) : ''}</span>
+        <div class="sub">${d.pendingItems.map((x) => esc(x.title || 'פריט') + (x.amount ? ' ' + money(x.amount) : '') + (x.note ? ` (${esc(x.note)})` : '')).join(' · ')}</div></div></div>`).join('') || '<div class="empty" style="padding:14px">אין</div>')}`;
+  }
+  function viewQueue() {
+    const owner = vget('q-owner', '');
+    const people = unitPeople();
+    const bar_ = `<div class="toolbar"><div class="chips"><span class="chip ${!owner ? 'on' : ''}" data-act="vset" data-page="q" data-k="owner" data-v="">כולם</span>
+      ${people.map((p) => `<span class="chip ${owner === p.name ? 'on' : ''}" data-act="vset" data-page="q" data-k="owner" data-v="${esc(p.name)}">${esc(p.name)}</span>`).join('')}</div></div>`;
+    return shell(bar_ + queueHTML(owner), 'לטיפול', 'כל מה שמחכה להחלטה: הזמנות שפג תוקפן, חשבונות תקועים ודרישות פתוחות');
+  }
+  function openCloseOrder(ids) {
+    ids = [].concat(ids);
+    modal(ids.length > 1 ? `סגירת ${ids.length} הזמנות` : 'סגירת הזמנה ' + esc(byId('orders', ids[0]).orderNumber), `<form id="closeForm"><div class="form-grid">
+      <div class="field full"><label>סיבת הסגירה</label><select name="reason">${['העבודה הסתיימה', 'הוגש חשבון סופי', 'היתרה לא תנוצל', 'הוחלפה בהזמנה אחרת', 'אחר'].map((x) => `<option>${x}</option>`).join('')}</select></div>
+      <div class="field full"><label>הערה (אופציונלי)</label><textarea name="note"></textarea></div></div></form>`,
+      `<button class="btn primary" data-act="do-close" data-ids="${ids.join(',')}">סגירה</button><button class="btn" data-act="close">ביטול</button>`);
+  }
+  async function doClose(ids) {
+    const d = readForm($('#closeForm')); const items = [];
+    for (const id of ids) { const o = byId('orders', id); if (!o) continue;
+      items.push(['orders', id, { ...o, closed: true, closedAt: today(), closeReason: d.reason, history: [...(o.history || []), { type: 'close', date: today(), note: d.reason + (d.note ? ' — ' + d.note : ''), by: DB.user.name }] }]); }
+    await DB.bulkWrite(items); DB.log(`סגר/ה ${items.length} הזמנות`, 'order', d.reason); S._qsel = new Set(); closeModal(); toast(`נסגרו ${items.length} הזמנות`, 'ok');
+  }
+
+  /* ---------- חשבונות ---------- */
+  function invRow(i) { const o = invOrder(i); const s = INV_ST[i.status] || INV_ST.received; const dd = invDays(i);
+    return `<div class="q-row" data-act="open" data-kind="invoice" data-id="${i.id}"><div class="q-main"><b>${esc(i.label || 'חשבון')}</b> · הזמנה ${esc(o.orderNumber || i.orderNumber || '')} <span class="sub">${esc(o.supplier || '')}</span>
+      <div class="sub">${i.number ? 'חשבון ' + esc(i.number) + ' · ' : ''}${o.owner ? '👤 ' + esc(o.owner) : ''}</div></div>
+      <div class="q-num"><b>${money(i.amount)}</b><small>כולל מע"מ</small></div>
+      <div class="q-num ${invStuck(i) ? 'bad-t' : ''}"><b>${dd ?? '—'}</b><small>ימים בסטטוס</small></div><span class="pill ${s.c}">${s.i} ${s.l}</span></div>`; }
+  function viewInvoices() {
+    const cur = { st: vget('inv-st', 'open'), owner: vget('inv-owner', ''), proj: vget('inv-proj', '') };
+    const counts = {}; S.invoices.forEach((i) => { counts[i.status] = (counts[i.status] || 0) + 1; });
+    let list = S.invoices.filter((i) => match(i, S.q) || match(invOrder(i).orderNumber, S.q) || match(invOrder(i).supplier, S.q))
+      .filter((i) => cur.st === 'all' || (cur.st === 'open' ? INV_OPEN.includes(i.status) : cur.st === 'stuck' ? invStuck(i) : i.status === cur.st))
+      .filter((i) => !cur.owner || ownerMatch(invOrder(i), cur.owner)).filter((i) => !cur.proj || invOrder(i).projectId === cur.proj)
+      .sort((a, b) => String(b.statusAt || b.date || '').localeCompare(String(a.statusAt || a.date || '')));
+    const total = list.reduce((s, i) => s + (i.amount || 0), 0);
+    const stuckN = S.invoices.filter(invStuck).length;
+    const pipe = `<div class="pipe">${[...INV_FLOW, 'rejected'].map((k) => `<div class="pipe-st ${cur.st === k ? 'on' : ''}" data-act="vset" data-page="inv" data-k="st" data-v="${k}"><span>${INV_ST[k].i}</span><b>${counts[k] || 0}</b><small>${INV_ST[k].l}</small></div>`).join('<span class="pipe-arr">‹</span>')}</div>`;
+    const filters = `<div class="toolbar"><div class="chips">${[['open', 'פתוחים'], ['stuck', `תקועים (${stuckN})`], ['archived', 'היסטוריים'], ['all', 'הכל']].map(([k, l]) => `<span class="chip ${cur.st === k ? 'on' : ''}" data-act="vset" data-page="inv" data-k="st" data-v="${k}">${l}</span>`).join('')}</div>
+      <select data-vsel="inv-owner"><option value="">כל האחראים</option>${unitPeople().map((p) => `<option ${cur.owner === p.name ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select>
+      <select data-vsel="inv-proj" style="max-width:220px"><option value="">כל הפרויקטים</option>${S.projects.slice().sort((a, b) => heCmp(a.name, b.name)).map((p) => `<option value="${p.id}" ${cur.proj === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select>
+      <span class="spacer"></span><span class="vcount">${list.length} חשבונות · ${money(total)}</span></div>`;
+    const rows = list.slice(0, S._invAll ? 2000 : 200);
+    const table = `<div class="card table-wrap"><table class="tbl"><thead><tr><th>חשבון</th><th>הזמנה</th><th>ספק</th><th>פרויקט</th><th>אחראי/ת</th><th>סכום כולל מע"מ</th><th>מס׳ חשבון</th><th>תאריך הגשה</th><th>סטטוס</th><th>ימים בסטטוס</th></tr></thead><tbody>
+      ${rows.map((i) => { const o = invOrder(i); const s = INV_ST[i.status] || INV_ST.received; return `<tr data-act="open" data-kind="invoice" data-id="${i.id}"><td class="strong">${esc(i.label || '')}</td><td class="num">${esc(o.orderNumber || i.orderNumber || '')}</td><td>${esc(o.supplier || '')}</td>
+        <td class="sub">${esc((byId('projects', o.projectId) || {}).name || '')}</td><td>${esc(o.owner || '')}</td><td class="num">${money(i.amount)}</td><td class="num">${esc(i.number || '')}</td><td class="num">${dfmt(i.date)}</td>
+        <td><span class="pill ${s.c}">${s.i} ${s.l}</span></td><td class="num ${invStuck(i) ? 'bad-t' : ''}">${INV_OPEN.includes(i.status) ? invDays(i) ?? '—' : ''}</td></tr>`; }).join('') || '<tr><td colspan="10" class="empty">אין חשבונות בסינון הזה</td></tr>'}</tbody></table>
+      ${list.length > rows.length ? `<div style="padding:10px"><button class="btn sm" data-act="inv-all">הצג את כל ${list.length}</button></div>` : ''}</div>
+      <div class="mcards">${rows.slice(0, 100).map(invRow).join('')}</div>`;
+    return shell(pipe + filters + table, 'חשבונות', 'מעקב חשבונות מתכננים: התקבל ← נבדק ← בחתימה ← הוגש ← שולם', `<button class="btn primary" data-act="new-invoice">+ חשבון</button>`);
+  }
+  function openInvoiceEditor(i = {}) {
+    const o = i.orderId ? byId('orders', i.orderId) : null;
+    modal(i.id ? 'עריכת חשבון' : 'חשבון חדש', `<form id="invForm"><div class="form-grid">
+      <div class="field full"><label>הזמנה</label><input name="orderNumber" list="ordList" value="${esc(o ? o.orderNumber : i.orderNumber || '')}" placeholder="מספר הזמנה" ${i.id ? '' : 'autofocus'}>
+        <datalist id="ordList">${S.orders.filter((x) => !isClosedOrder(x)).map((x) => `<option value="${esc(x.orderNumber)}">${esc(x.supplier || '')} · ${esc(x.profession || '')}</option>`).join('')}</datalist></div>
+      <div class="field"><label>שם החשבון</label><input name="label" value="${esc(i.label || (o ? nextInvLabel(o.id) : 'ח"ח 1'))}"></div>
+      <div class="field"><label>מספר חשבון</label><input name="number" value="${esc(i.number || '')}"></div>
+      <div class="field"><label>סכום כולל מע"מ (₪)</label><input name="amount" type="number" step="0.01" value="${esc(i.amount ?? '')}"></div>
+      <div class="field"><label>תאריך הגשה ע"י הספק</label><input name="date" type="date" value="${esc(i.date || today())}"></div>
+      <div class="field"><label>חשבונית עסקה</label><input name="deal" value="${esc(i.deal || '')}"></div>
+      <div class="field"><label>הוגש דרך</label><input name="via" value="${esc(i.via || '')}"></div>
+      <div class="field full"><label>הערות</label><textarea name="notes">${esc(i.notes || '')}</textarea></div></div></form>`,
+      `<button class="btn primary" data-act="save-invoice" data-id="${i.id || ''}">שמירה</button><button class="btn" data-act="close">ביטול</button>`);
+    const f = $('#invForm');
+    f.orderNumber.addEventListener('change', () => { const x = S.orders.find((y) => y.orderNumber === f.orderNumber.value.trim()); if (x && !i.id) f.label.value = nextInvLabel(x.id); });
+  }
+  async function saveInvoice(id) {
+    const d = readForm($('#invForm')); const o = S.orders.find((x) => x.orderNumber === d.orderNumber);
+    if (!o) return toast('לא נמצאה הזמנה עם המספר הזה', 'error');
+    d.orderId = o.id;
+    if (id) { const i = byId('invoices', id); await DB.update('invoices', id, { ...d, log: [...(i.log || []), logEntry('פרטי החשבון עודכנו')] }); }
+    else { const now = new Date().toISOString(); await DB.add('invoices', { ...d, status: 'received', statusAt: now, dates: { received: today() }, log: [logEntry('החשבון נרשם — התקבל')] });
+      DB.log('רשם/ה חשבון', 'invoice', `${d.label} · ${o.orderNumber}`); }
+    closeModal(); toast('החשבון נשמר', 'ok');
+  }
+  async function setInvStatus(id, st, note) {
+    const i = byId('invoices', id); if (!i || i.status === st) return;
+    await DB.update('invoices', id, { status: st, statusAt: new Date().toISOString(), dates: { ...(i.dates || {}), [st]: today() },
+      log: [...(i.log || []), logEntry(`סטטוס: ${(INV_ST[i.status] || {}).l || '—'} ← ${INV_ST[st].l}${note ? ' · ' + note : ''}`)] });
+    DB.log(`העביר/ה חשבון ל"${INV_ST[st].l}"`, 'invoice', `${i.label} · ${invOrder(i).orderNumber || ''}`);
+  }
+  function openInvoice(id) {
+    const i = byId('invoices', id); if (!i) return; const o = invOrder(i); const s = INV_ST[i.status] || INV_ST.received;
+    const stepIdx = INV_FLOW.indexOf(i.status);
+    const info = (l, v) => `<div class="info"><small>${l}</small><b>${v}</b></div>`;
+    modal(`${esc(i.label || 'חשבון')} · הזמנה ${esc(o.orderNumber || '')}`, `
+      <div class="stepper">${INV_FLOW.map((k, n) => `<button class="step ${n < stepIdx ? 'done' : ''} ${k === i.status ? 'cur' : ''}" data-act="inv-st" data-id="${id}" data-v="${k}">
+        <span>${n < stepIdx ? '✓' : INV_ST[k].i}</span><b>${INV_ST[k].l}</b><small>${i.dates && i.dates[k] ? dfmt(i.dates[k]) : ''}</small></button>`).join('')}</div>
+      <div class="chips" style="margin:10px 0 16px"><span class="pill ${s.c}">${s.i} ${s.l}</span>${INV_OPEN.includes(i.status) ? `<span class="pill ${invStuck(i) ? 'bad' : 'gray'}">${invDays(i)} ימים בסטטוס</span>` : ''}
+        <span class="chip" data-act="inv-st" data-id="${id}" data-v="rejected">↩️ הוחזר לתיקון</span>${i.status !== 'archived' ? `<span class="chip" data-act="inv-st" data-id="${id}" data-v="archived">🗄️ העבר להיסטורי</span>` : ''}</div>
+      <div class="info-grid">${info('הזמנה', `<a href="#" data-act="open" data-kind="order" data-id="${o.id}">${esc(o.orderNumber || '')}</a>`)}${info('ספק', esc(o.supplier || '—'))}${info('אחראי/ת', esc(o.owner || '—'))}
+        ${info('סכום כולל מע"מ', money(i.amount))}${info('ללא מע"מ', money(i.amount != null ? i.amount / (1 + VAT) : null))}${info('מספר חשבון', esc(i.number || '—'))}
+        ${info('תאריך הגשה', dfmt(i.date))}${info('חשבונית עסקה', esc(i.deal || '—'))}${info('הוגש דרך', esc(i.via || '—'))}</div>
+      ${i.returned ? `<div class="sub" style="margin-top:8px">החזרה לספק / הגשה לחשבונות: ${esc(i.returned)}</div>` : ''}
+      ${i.notes ? `<div class="section-t">📝 הערות</div><div style="white-space:pre-wrap">${esc(i.notes)}</div>` : ''}
+      <div class="section-t">🕓 יומן</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px"><input id="invCmt" placeholder="הערה לחשבון… (Enter)" style="flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:10px"><button class="btn sm primary" data-act="inv-cmt" data-id="${id}">הוסף</button></div>
+      <div class="log">${(i.log || []).slice().reverse().map((c) => `<div class="log-item ${c.type === 'system' ? 'sys' : ''}"><div class="log-ic">${c.type === 'system' ? '⚙️' : '📝'}</div><div style="flex:1"><div class="log-h"><b>${esc(c.by || '')}</b><span>${fmtDT(c.at)}</span></div>${esc(c.text)}</div></div>`).join('') || '<div class="empty" style="padding:10px">אין רישומים</div>'}</div>`,
+      `<button class="btn primary" data-act="edit-invoice" data-id="${id}">✏️ עריכה</button>${i.status === 'paid' && o.id ? `<button class="btn" data-act="util-from-inv" data-id="${o.id}">💳 עדכן ניצול ההזמנה לפי החשבונות</button>` : ''}
+       <div class="spacer"></div><button class="btn danger" data-act="del" data-col="invoices" data-id="${id}">מחיקה</button>`, 'wide');
+    S._openDetail = ['invoice', id];
+  }
+  function orderInvoicesHTML(o) {
+    const list = ordersInvoices(o.id); const sum = list.filter((i) => i.status !== 'rejected').reduce((s, i) => s + (i.amount || 0), 0);
+    return `<div class="section-t">🧾 חשבונות <span class="pill gray">${list.length}</span><span class="sub" style="font-weight:500">${list.length ? `סה"כ ${money(sum)} כולל מע"מ (${pct(sum, o.budgetTotal)}% מההזמנה)` : ''}</span>
+      <span style="flex:1"></span>${list.length ? `<button class="btn sm" data-act="util-from-inv" data-id="${o.id}">💳 ניצול לפי חשבונות</button>` : ''}<button class="btn sm primary" data-act="new-invoice" data-order="${o.id}">+ חשבון</button></div>
+      ${list.length ? `<div class="table-wrap"><table class="tbl"><thead><tr><th>חשבון</th><th>סכום</th><th>מס׳</th><th>הגשה</th><th>עסקה</th><th>סטטוס</th></tr></thead><tbody>${list.map((i) => { const s = INV_ST[i.status] || INV_ST.received;
+        return `<tr data-act="open" data-kind="invoice" data-id="${i.id}"><td class="strong">${esc(i.label || '')}</td><td class="num">${money(i.amount)}</td><td>${esc(i.number || '')}</td><td class="num">${dfmt(i.date)}</td><td>${esc(i.deal || '')}</td><td><span class="pill ${s.c}">${s.l}</span></td></tr>`; }).join('')}</tbody></table></div>` : ''}`;
+  }
+
+  /* ---------- דרישות ---------- */
+  const demandOrders = (d) => S.orders.filter((o) => d.demandNumber && o.demandNumber === d.demandNumber);
+  function demandCalc(d) {
+    const os = demandOrders(d); const ordered = os.reduce((s, o) => s + (o.budgetTotal || 0), 0);
+    const bal = d.amount != null ? d.amount - ordered : null; const pend = (d.pendingItems || []).length;
+    const st = d.cancelled ? { k: 'cancelled', l: 'בוטלה', c: 'gray' } : pend ? { k: 'pending', l: 'ממתינה להזמנה', c: 'violet' } : !os.length ? { k: 'empty', l: 'ללא הזמנות', c: 'warn' }
+      : bal != null && bal < Math.max(1000, (d.amount || 0) * 0.01) ? { k: 'used', l: 'נוצלה', c: 'gray' } : { k: 'open', l: 'פתוחה', c: 'ok' };
+    return { os, ordered, bal, pend, st, p: d.amount ? pct(ordered, d.amount) : 0 };
+  }
+  function viewDemands() {
+    const cur = { st: vget('dem-st', 'active'), owner: vget('dem-owner', '') };
+    const all = S.demands.map((d) => ({ d, c: demandCalc(d) }));
+    const list = all.filter((x) => match(x.d, S.q) || match((byId('projects', x.d.projectId) || {}).name, S.q))
+      .filter((x) => cur.st === 'all' || (cur.st === 'active' ? ['pending', 'open', 'empty'].includes(x.c.st.k) : x.c.st.k === cur.st))
+      .filter((x) => !cur.owner || norm(x.d.owner) === norm(cur.owner))
+      .sort((a, b) => (a.c.st.k === 'pending' ? 0 : 1) - (b.c.st.k === 'pending' ? 0 : 1) || heCmp((byId('projects', a.d.projectId) || {}).name, (byId('projects', b.d.projectId) || {}).name));
+    const cnt = (k) => all.filter((x) => (k === 'active' ? ['pending', 'open', 'empty'].includes(x.c.st.k) : k === 'all' ? true : x.c.st.k === k)).length;
+    const content = `<div class="toolbar"><div class="chips">${[['active', 'פעילות'], ['pending', 'ממתינות להזמנה'], ['used', 'נוצלו'], ['all', 'הכל']].map(([k, l]) => `<span class="chip ${cur.st === k ? 'on' : ''}" data-act="vset" data-page="dem" data-k="st" data-v="${k}">${l} <small>${cnt(k)}</small></span>`).join('')}</div>
+      <select data-vsel="dem-owner"><option value="">כל האחראים</option>${unitPeople().map((p) => `<option ${cur.owner === p.name ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select><span class="spacer"></span><span class="vcount">${list.length} דרישות</span></div>
+      <div class="card table-wrap"><table class="tbl"><thead><tr><th>דרישה</th><th>פרויקט</th><th>אחראי/ת</th><th>סכום דרישה</th><th>הוזמן</th><th>ניצול הדרישה</th><th>יתרה</th><th>הזמנות</th><th>ממתין</th><th>סטטוס</th></tr></thead><tbody>
+      ${list.map(({ d, c }) => `<tr data-act="open" data-kind="demand" data-id="${d.id}"><td class="strong">${esc(d.demandNumber || '—')}</td><td>${esc((byId('projects', d.projectId) || {}).name || '—')}</td><td>${esc(d.owner || '')}</td>
+        <td class="num">${money(d.amount)}</td><td class="num">${money(c.ordered)}</td><td>${d.amount ? `${bar(c.p)}<div class="sub">${c.p}%</div>` : '—'}</td><td class="num ${c.bal != null && c.bal < -1 ? 'bad-t' : ''}">${money(c.bal != null && Math.abs(c.bal) < 1 ? 0 : c.bal)}</td>
+        <td class="num">${c.os.length}</td><td class="num">${c.pend || ''}</td><td><span class="pill ${c.st.c}">${c.st.l}</span></td></tr>`).join('') || '<tr><td colspan="10" class="empty">אין דרישות בסינון הזה</td></tr>'}</tbody></table></div>`;
+    return shell(content, 'דרישות', 'סכום הדרישה מול מה שהוזמן, ודרישות שעוד לא יצאה להן הזמנה (סכומים כולל מע"מ)', `<button class="btn violet" data-act="new-demand">+ דרישה</button>`);
+  }
+  function openDemandEditor(d = {}) {
+    modal(d.id ? 'עריכת דרישה' : 'דרישה חדשה', `<form id="demForm"><div class="form-grid">
+      <div class="field"><label>מספר דרישה</label><input name="demandNumber" value="${esc(d.demandNumber || '')}" autofocus></div>
+      <div class="field"><label>סכום הדרישה (כולל מע"מ)</label><input name="amount" type="number" step="0.01" value="${esc(d.amount ?? '')}"></div>
+      <div class="field"><label>פרויקט</label><select name="projectId"><option value="">—</option>${S.projects.slice().sort((a, b) => heCmp(a.name, b.name)).map((p) => `<option value="${p.id}" ${d.projectId === p.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></div>
+      <div class="field"><label>אחראי/ת</label><input name="owner" list="ownList" value="${esc(d.owner || '')}"><datalist id="ownList">${unitPeople().map((p) => `<option value="${esc(p.name)}">`).join('')}</datalist></div>
+      <div class="field full"><label>תיאור / הערות</label><textarea name="notes">${esc(d.notes || '')}</textarea></div></div></form>`,
+      `<button class="btn violet" data-act="save-demand" data-id="${d.id || ''}">שמירה</button><button class="btn" data-act="close">ביטול</button>`);
+  }
+  function openDemand(id) {
+    const d = byId('demands', id); if (!d) return; const c = demandCalc(d);
+    const info = (l, v) => `<div class="info"><small>${l}</small><b>${v}</b></div>`;
+    modal(`דרישה ${esc(d.demandNumber || '')}`, `
+      <div style="margin-bottom:12px"><span class="pill ${c.st.c}">${c.st.l}</span> <span class="sub">${esc((byId('projects', d.projectId) || {}).name || '')}</span></div>
+      <div class="info-grid">${info('סכום הדרישה (כולל מע"מ)', money(d.amount))}${info('הוזמן', money(c.ordered))}${info('יתרה', money(c.bal))}
+        ${info('אחראי/ת', esc(d.owner || '—'))}${info('פרויקט', d.projectId ? `<a href="#" data-act="open" data-kind="ent-project" data-id="${d.projectId}">${esc((byId('projects', d.projectId) || {}).name || '')}</a>` : '—')}${info('יתרה לפי האקסל', money(d.excelBalance))}</div>
+      ${d.amount ? `<div style="margin-top:12px">${bar(c.p)}</div>` : ''}
+      <div class="section-t">⏳ ממתין להזמנה <span class="pill gray">${c.pend}</span></div>
+      ${(d.pendingItems || []).map((x, k) => `<div class="q-row"><div class="q-main"><b>${esc(x.title || 'פריט')}</b><div class="sub">${[x.amount ? money(x.amount) : '', x.note, x.planWork ? 'עבודת תכנון ' + x.planWork : ''].filter(Boolean).map(esc).join(' · ')}</div></div>
+        <div class="q-acts"><button class="btn sm primary" data-act="dem-order" data-id="${id}" data-k="${k}">+ צור הזמנה</button><button class="btn sm ghost" data-act="dem-rm" data-id="${id}" data-k="${k}">✕</button></div></div>`).join('') || '<div class="sub">אין פריטים ממתינים</div>'}
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><input id="demItem" placeholder="+ פריט שממתין להזמנה (למשל: חשמל)" style="flex:1;min-width:180px;padding:9px 12px;border:1px solid var(--border);border-radius:10px"><input id="demItemAmt" type="number" placeholder="סכום משוער" style="width:140px;padding:9px 12px;border:1px solid var(--border);border-radius:10px"><button class="btn sm violet" data-act="dem-add" data-id="${id}">הוסף</button></div>
+      <div class="section-t">📄 הזמנות על הדרישה <span class="pill gray">${c.os.length}</span></div>
+      ${c.os.map((o) => { const s = orderStatus(o); return `<div class="ent-row" data-act="open" data-kind="order" data-id="${o.id}"><div style="flex:1;min-width:0"><b>${esc(o.orderNumber)}</b> <span class="sub">${esc(o.supplier || '')} · ${esc(o.profession || '')} · ${money(o.budgetTotal)}</span></div><span class="pill ${s.c}">${s.l}</span></div>`; }).join('') || '<div class="sub">עדיין אין הזמנות</div>'}
+      ${d.notes ? `<div class="section-t">📝 הערות</div><div style="white-space:pre-wrap">${esc(d.notes)}</div>` : ''}`,
+      `<button class="btn violet" data-act="edit-demand" data-id="${id}">✏️ עריכה</button><div class="spacer"></div><button class="btn danger" data-act="del" data-col="demands" data-id="${id}">מחיקה</button>`, 'wide');
+    S._openDetail = ['demand', id];
+  }
+
+  /* ---------- מסך אחראי ---------- */
+  function viewOwners() {
+    const people = unitPeople(); let owner = vget('own-who', '');
+    if (!owner) { const me = people.find((p) => personNames(p).includes(norm(DB.user.name))); owner = me ? me.name : (people[0] || {}).name || ''; }
+    const os = S.orders.filter((o) => ownerMatch(o, owner)); const act = os.filter(isActiveOrder);
+    const budget = act.reduce((s, o) => s + (o.budgetExVat || 0), 0), used = act.reduce((s, o) => s + (o.utilized || 0), 0);
+    const q = queueData(owner);
+    const p = S.people.find((x) => personNames(x).includes(norm(owner)));
+    const tasks = S.tasks.filter((t) => t.status !== 'done' && ((t.assignee && norm(t.assignee) === norm(owner)) || (p && hasLink(t, 'person', p.id))));
+    const invOpen = S.invoices.filter((i) => INV_OPEN.includes(i.status) && ownerMatch(invOrder(i), owner));
+    const projs = [...new Set(os.map((o) => o.projectId).filter(Boolean))].map((id) => byId('projects', id)).filter(Boolean);
+    const content = `<div class="toolbar"><div class="chips">${people.map((x) => `<span class="chip ${owner === x.name ? 'on' : ''}" data-act="vset" data-page="own" data-k="who" data-v="${esc(x.name)}">${avatar(x.name)} ${esc(x.name)}</span>`).join('') || '<span class="sub">אין עדיין אנשי קשר מסוג "גורם ביחידה"</span>'}</div></div>
+      ${owner ? `<div class="grid kpis">
+        <div class="kpi orders" data-act="vgo" data-route="orders" data-owner="${esc(owner)}"><div class="lbl">הזמנות פעילות</div><div class="val">${act.length}</div><div class="meta">${money(budget)} · ניצול ${pct(used, budget)}%</div></div>
+        <div class="kpi alerts"><div class="lbl">פג תוקף עם יתרה</div><div class="val">${q.expired.length}</div><div class="meta">${money(q.expired.reduce((s, o) => s + orderBalance(o), 0))}</div></div>
+        <div class="kpi money" data-act="vgo" data-route="invoices" data-owner="${esc(owner)}"><div class="lbl">חשבונות פתוחים</div><div class="val">${invOpen.length}</div><div class="meta">${q.stuck.length} תקועים</div></div>
+        <div class="kpi tasks"><div class="lbl">משימות פתוחות</div><div class="val">${tasks.length}</div><div class="meta">${projs.length} פרויקטים</div></div></div>
+      ${tasks.length ? `<div class="card" style="margin-top:18px"><div class="card-h"><span class="tag" style="background:var(--c-tasks)"></span><h2>משימות</h2></div>${tasks.map(taskCard).join('')}</div>` : ''}
+      <div style="margin-top:18px">${queueHTML(owner, { limit: 10 })}</div>
+      ${projs.length ? `<div class="section-t" style="margin-top:18px">🏗️ הפרויקטים של ${esc(owner)}</div><div class="chips">${projs.map((x) => linkChip({ type: 'project', id: x.id })).join('')}</div>` : ''}` : ''}`;
+    return shell(content, 'מסך אחראי', 'כל מה שבאחריות של איש צוות אחד: הזמנות, חשבונות, החלטות ומשימות');
+  }
+
+  /* ---------- איחוד אנשי קשר ---------- */
+  function lev(a, b) { const m = a.length, n2 = b.length; if (Math.abs(m - n2) > 3) return 9; const dp = Array.from({ length: m + 1 }, (_, i) => [i]); for (let j = 1; j <= n2; j++) dp[0][j] = j;
+    for (let i = 1; i <= m; i++) for (let j = 1; j <= n2; j++) dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); return dp[m][n2]; }
+  function dupCandidates() {
+    const ppl = S.people.map((p) => ({ p, k: norm(p.name) })).filter((x) => x.k.length >= 3); const out = []; const ign = new Set(settings().dupIgnore || []);
+    for (let i = 0; i < ppl.length; i++) for (let j = i + 1; j < ppl.length; j++) {
+      const a = ppl[i], b = ppl[j]; const key = [a.p.id, b.p.id].sort().join('|'); if (ign.has(key)) continue;
+      const short = a.k.length < b.k.length ? a.k : b.k, long = a.k.length < b.k.length ? b.k : a.k;
+      let why = '';
+      if (a.k === b.k) why = 'אותו שם בכתיב שונה';
+      else if (short.length >= 4 && long.includes(short)) why = 'שם אחד מכיל את השני';
+      else if (short.length >= 5 && lev(a.k, b.k) <= (short.length >= 8 ? 2 : 1)) why = 'כמעט אותו שם';
+      if (why) out.push({ a: a.p, b: b.p, why, key });
+    }
+    return out;
+  }
+  function openMergeTool() {
+    const c = dupCandidates();
+    const cnt = (p) => S.orders.filter((o) => consultantMatch(o, p)).length;
+    modal(`איחוד כפילויות באנשי קשר (${c.length})`, `${c.length ? `<p class="sub" style="margin-top:0">בכל זוג, לחץ על השם שיישאר. השם השני יישמר ככינוי, וכל ההזמנות, המשימות והקישורים יעברו אליו.</p>` : ''}
+      ${c.map((x) => `<div class="merge-row"><button class="btn sm" data-act="merge" data-keep="${x.a.id}" data-drop="${x.b.id}">✔ ${esc(x.a.name)} <small>(${cnt(x.a)} הזמנות)</small></button>
+        <span class="sub">${x.why}</span><button class="btn sm" data-act="merge" data-keep="${x.b.id}" data-drop="${x.a.id}">✔ ${esc(x.b.name)} <small>(${cnt(x.b)} הזמנות)</small></button>
+        <button class="btn sm ghost" data-act="merge-ignore" data-key="${x.key}" title="זה לא אותו אחד">לא כפילות</button></div>`).join('') || '<div class="empty">לא נמצאו כפילויות אפשריות 🎉</div>'}
+      <div class="section-t">איחוד ידני</div><div class="form-grid"><div class="field"><label>להשאיר את</label><select id="mKeep">${S.people.slice().sort((a, b) => heCmp(a.name, b.name)).map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}</select></div>
+      <div class="field"><label>לאחד לתוכו את</label><select id="mDrop">${S.people.slice().sort((a, b) => heCmp(a.name, b.name)).map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}</select></div></div>
+      <button class="btn teal" data-act="merge-manual" style="margin-top:10px">איחוד</button>`);
+    S._openDetail = ['merge', ''];
+  }
+  async function mergePeople(keepId, dropId) {
+    if (keepId === dropId) return toast('בחרת את אותו איש קשר פעמיים', 'error');
+    const k = byId('people', keepId), d = byId('people', dropId); if (!k || !d) return;
+    const merged = { ...k, aliases: [...new Set([...(k.aliases || []), d.name, ...(d.aliases || [])])].filter((x) => norm(x) !== norm(k.name)) };
+    ['phone', 'email', 'company', 'role', 'projectId', 'notes'].forEach((f) => { if (!merged[f] && d[f]) merged[f] = d[f]; });
+    const items = [['people', keepId, merged]];
+    S.tasks.filter((t) => hasLink(t, 'person', dropId)).forEach((t) => { const links = linksOf(t).map((x) => (x.type === 'person' && x.id === dropId ? { type: 'person', id: keepId } : x));
+      const uniq = links.filter((x, i2) => links.findIndex((y) => y.type === x.type && y.id === x.id) === i2); items.push(['tasks', t.id, { ...t, links: uniq }]); });
+    await DB.bulkWrite(items); await DB.remove('people', dropId);
+    DB.log('איחד/ה אנשי קשר', 'person', `${d.name} ← ${k.name}`); toast(`"${d.name}" אוחד לתוך "${k.name}"`, 'ok');
+  }
+
+  /* ---------- סנכרון מקובץ אקסל ---------- */
+  const XL_KEYS = [
+    ['project', (h) => h === 'שם הפרויקט' || h === 'פרויקט'], ['demand', (h) => h.includes('דרישה') && (h.includes('מספר') || h.includes("מס'"))],
+    ['demandSum', (h) => h.includes('סכום') && h.includes('דרישה')], ['demandBal', (h) => h.includes('יתר') && h.includes('דרישה')], ['prof', (h) => h === 'מקצוע'],
+    ['order', (h) => h.startsWith('מספר הזמנה') || h === 'הזמנה'], ['amount', (h) => h.startsWith('סכום הזמנה') || h.startsWith('סכום ההזמנה')], ['orderBal', (h) => h === 'יתרה בהזמנה'],
+    ['office', (h) => h === 'שם משרד'], ['employee', (h) => h === 'שם עובד'], ['start', (h) => h.includes('צו התחלת')], ['end', (h) => h.includes('תוקף')],
+    ['invDate', (h) => h === 'תאריך הגשת חשבון'], ['invNum', (h) => h === 'מספר חשבון'], ['returned', (h) => h.startsWith('תאריך החזרה')], ['via', (h) => h === 'הגשה דרך'],
+    ['deal', (h) => h.includes('עסקה')], ['planWork', (h) => h.includes('עבודת תכנון')], ['notes', (h) => h === 'הערות']];
+  const PERSON_SHEETS = ['רפאל', 'סאלח', 'אמיר', 'בתאל', 'ערן', 'משה', 'דניאל מכלוף'];
+  const CLOSING = ['לסגירה', 'לסגירה 1', 'מתאמים לסגירה'];
+  const xs = (v) => { if (v == null) return ''; if (v instanceof Date) return v.toISOString().slice(0, 10); if (typeof v === 'number' && Number.isInteger(v)) return String(v); return String(v).replace(/\s+/g, ' ').trim(); };
+  const xnum = (v) => (typeof v === 'number' ? v : v == null || v === '' ? null : (isNaN(parseFloat(String(v).replace(/,/g, ''))) ? null : parseFloat(String(v).replace(/,/g, ''))));
+  function xdate(v) {
+    if (typeof v === 'number' && v > 20000 && v < 80000) return new Date(Date.UTC(1899, 11, 30) + Math.round(v) * 864e5).toISOString().slice(0, 10);
+    if (v instanceof Date) return `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, '0')}-${String(v.getDate()).padStart(2, '0')}`;
+    const t = xs(v); const dg = t.replace(/\D/g, '');
+    if (/^\d{1,2}[./]\d{6}$/.test(t) && dg.length === 8) return `${dg.slice(4)}-${dg.slice(2, 4)}-${dg.slice(0, 2)}`;
+    const m = t.match(/^(\d{1,2})[./](\d{1,2})[./](\d{2,4})$/); if (m) { let y = m[3]; if (y.length === 2) y = '20' + y; return `${y}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`; }
+    return '';
+  }
+  function parseWorkbook(wb) {
+    const out = []; const pendingDem = [];
+    wb.SheetNames.forEach((name) => {
+      const ws = wb.Sheets[name]; const vis = ((wb.Workbook || {}).Sheets || []).find((s) => s.name === name); if (vis && vis.Hidden) return;
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: null });
+      let hr = -1; for (let r = 0; r < Math.min(5, rows.length); r++) { const v = (rows[r] || []).map(xs); if (v.includes('שם הפרויקט') || v.includes('פרויקט')) { hr = r; break; } }
+      if (hr < 0) return;
+      const cols = {}; (rows[hr] || []).forEach((h, c) => { h = xs(h); if (!h) return; for (const [k, pred] of XL_KEYS) if (cols[k] == null && pred(h)) { cols[k] = c; break; } });
+      if (cols.order == null) return;
+      let proj = '', demand = '', dsum = null, dbal = null, pending = []; const sheet = name.trim();
+      for (let r = hr + 1; r < rows.length; r++) {
+        const row = rows[r] || []; if (!row.some((v) => v != null && v !== '')) continue;
+        const g = (k) => (cols[k] != null ? row[cols[k]] : null);
+        if (xs(g('project'))) { proj = xs(g('project')); demand = ''; dsum = dbal = null; }
+        if (xs(g('demand'))) demand = xs(g('demand'));
+        if (xnum(g('demandSum')) != null) dsum = xnum(g('demandSum'));
+        if (xnum(g('demandBal')) != null) dbal = xnum(g('demandBal'));
+        const o = xs(g('order'));
+        const isInv = /^\s*ח['"״׳]{1,2}[חס]/.test(o) || (!/^44\d{8}$/.test(o) && xnum(g('amount')) != null && (xs(g('invNum')) || xdate(g('invDate'))) && !xs(g('prof')));
+        if (isInv) { pending.push({ label: o, amount: xnum(g('amount')), date: xdate(g('invDate')), num: xs(g('invNum')), returned: xdate(g('returned')) || xs(g('returned')), via: xs(g('via')), deal: xs(g('deal')) }); continue; }
+        if (/^44\d{8}$/.test(o)) {
+          out.push({ sheet, project: proj, demand, demandSum: dsum, demandBal: dbal, prof: xs(g('prof')), order: o, amount: xnum(g('amount')), orderBal: xnum(g('orderBal')),
+            office: xs(g('office')), employee: xs(g('employee')), start: xdate(g('start')), end: xdate(g('end')), planWork: xs(g('planWork')), notes: xs(g('notes')), invoices: pending });
+          pending = [];
+        } else {
+          if (/^88\d{6}$/.test(demand) && xs(g('prof')) && !xs(g('office')) && !xs(g('invNum')) && !xdate(g('invDate')) && (!o || /^[^\d()]+$/.test(o)) && /[א-ת]/.test(xs(g('prof'))) && !/הוקטן|בוטל/.test(xs(g('notes'))))
+            pendingDem.push({ sheet, project: proj, demand, demandSum: dsum, demandBal: dbal, title: xs(g('prof')) || o || 'פריט', amount: xnum(g('amount')), planWork: xs(g('planWork')), note: [xs(g('notes')), o && !/^44/.test(o) ? o : ''].filter(Boolean).join(' · ') });
+          if (!xs(g('prof')) && !xs(g('office'))) pending = [];
+        }
+      }
+    });
+    return { rows: out, pendingDem };
+  }
+  function sha1hex(str) { // SHA-1 קטן (גם בלי crypto.subtle)
+    const b = new TextEncoder().encode(str); const l = b.length; const w = new Uint32Array(((l + 8 >> 6) + 1) * 16);
+    for (let i = 0; i < l; i++) w[i >> 2] |= b[i] << (24 - (i % 4) * 8); w[l >> 2] |= 0x80 << (24 - (l % 4) * 8); w[w.length - 1] = l * 8;
+    let h0 = 0x67452301, h1 = 0xEFCDAB89, h2 = 0x98BADCFE, h3 = 0x10325476, h4 = 0xC3D2E1F0; const W = new Uint32Array(80);
+    const rol = (x, n) => (x << n) | (x >>> (32 - n));
+    for (let i = 0; i < w.length; i += 16) {
+      for (let t = 0; t < 80; t++) W[t] = t < 16 ? w[i + t] : rol(W[t - 3] ^ W[t - 8] ^ W[t - 14] ^ W[t - 16], 1);
+      let a = h0, bb = h1, c = h2, d = h3, e = h4;
+      for (let t = 0; t < 80; t++) { const f = t < 20 ? (bb & c) | (~bb & d) : t < 40 ? bb ^ c ^ d : t < 60 ? (bb & c) | (bb & d) | (c & d) : bb ^ c ^ d;
+        const k = t < 20 ? 0x5A827999 : t < 40 ? 0x6ED9EBA1 : t < 60 ? 0x8F1BBCDC : 0xCA62C1D6; const tmp = (rol(a, 5) + f + e + k + W[t]) >>> 0; e = d; d = c; c = rol(bb, 30) >>> 0; bb = a; a = tmp; }
+      h0 = (h0 + a) >>> 0; h1 = (h1 + bb) >>> 0; h2 = (h2 + c) >>> 0; h3 = (h3 + d) >>> 0; h4 = (h4 + e) >>> 0;
+    }
+    return [h0, h1, h2, h3, h4].map((x) => x.toString(16).padStart(8, '0')).join('');
+  }
+  async function sha10(s) { return sha1hex(s).slice(0, 10); }
+  const pyNorm = (s) => String(s || '').replace(/["׳״'\s.\-]/g, '').toLowerCase();
+  async function buildSync(parsed) {
+    const t = today(); const NOW = new Date().toISOString(); const stamp = { createdAt: NOW, updatedAt: NOW, createdBy: 'סנכרון אקסל', updatedBy: DB.user.name };
+    const groups = new Map(); parsed.rows.forEach((r) => { if (!groups.has(r.order)) groups.set(r.order, []); groups.get(r.order).push(r); });
+    const rank = (r) => [r.end || '', CLOSING.includes(r.sheet) ? 0 : 1, r.amount != null ? 1 : 0, r.invoices.length];
+    const cmpRank = (a, b) => { const x = rank(a), y = rank(b); for (let i = 0; i < 4; i++) { if (x[i] < y[i]) return 1; if (x[i] > y[i]) return -1; } return 0; };
+    const findProj = (name) => S.projects.find((p) => pyNorm(p.name) === pyNorm(name));
+    const findPerson = (name) => S.people.find((p) => [p.name, ...(p.aliases || [])].some((x) => pyNorm(x) === pyNorm(name)));
+    const res = { newOrders: [], changed: [], newInv: [], updInv: [], newProj: [], newPeople: [], demands: [], same: 0 };
+    const projCache = {}, pplCache = {};
+    async function projId(name) { name = (name || '').replace(/\s+/g, ' ').trim(); if (!name) return ''; const k = pyNorm(name); if (projCache[k]) return projCache[k];
+      const ex = findProj(name); if (ex) return (projCache[k] = ex.id);
+      const id = 'xp-' + await sha10(k); res.newProj.push({ id, name, status: 'active', client: 'משהב"ט', ...stamp }); return (projCache[k] = id); }
+    async function ensurePerson(name, extra) { name = (name || '').replace(/\s+/g, ' ').trim(); if (!name) return; const k = pyNorm(name); if (pplCache[k] || findPerson(name)) return;
+      pplCache[k] = 1; res.newPeople.push({ id: 'xu-' + await sha10(k), name, type: 'יועץ / נותן שירות', ...extra, ...stamp }); }
+    for (const [num, rows] of groups) {
+      const rs = rows.slice().sort(cmpRank); const p = rs[0]; const fill = (k) => { const r = rs.find((x) => x[k] != null && x[k] !== ''); return r ? r[k] : p[k]; };
+      const sheets = [...new Set(rows.map((r) => r.sheet))]; const owner = sheets.find((s) => PERSON_SHEETS.includes(s)) || '';
+      const amount = fill('amount'); const bal = p.amount != null ? p.orderBal : fill('orderBal');
+      const office = fill('office'), prof = fill('prof'), projName = fill('project'); const demand = /^88\d{6}$/.test(fill('demand') || '') ? fill('demand') : '';
+      const pid = await projId(projName);
+      if (office) await ensurePerson(office, { role: prof });
+      const emps = [...new Set(rows.map((r) => r.employee).filter(Boolean))]; for (const e of emps) await ensurePerson(e, { role: 'מתאם/ת', company: office });
+      if (owner) await ensurePerson(owner, { type: 'גורם ביחידה', role: 'אחראי/ת הזמנות' });
+      const utilized = amount != null && bal != null ? Math.max(0, amount - bal) : null;
+      const exV = (x) => (x == null ? null : Math.round((x / (1 + VAT)) * 100) / 100);
+      const xo = { orderNumber: num, demandNumber: demand, supplier: office, profession: prof, owner, planWork: /^\d+$/.test(fill('planWork') || '') ? fill('planWork') : '',
+        budgetTotal: amount, budgetExVat: exV(amount), vat: amount != null ? Math.round((amount - amount / (1 + VAT)) * 100) / 100 : null, utilized: exV(utilized),
+        startDate: p.start || '', endDate: p.end || '', projectId: pid };
+      const existing = S.orders.find((o) => o.orderNumber === num);
+      const invoices = p.invoices.length ? p.invoices : (rs.find((r) => r.invoices.length) || { invoices: [] }).invoices;
+      let oid;
+      if (!existing) {
+        oid = 'xo-' + num;
+        res.newOrders.push({ id: oid, ...Object.fromEntries(Object.entries(xo).filter(([, v]) => v != null)), version: '', description: [prof, projName].filter(Boolean).join(' — '), sheet: sheets.join(', '),
+          consultants: emps.map((e) => ({ name: e })), notes: [fill('notes'), sheets.length > 1 ? 'מופיעה באקסל בגיליונות: ' + sheets.join(', ') : ''].filter(Boolean).join('\n'),
+          history: [{ type: 'create', date: p.start || t, note: 'נקלט בסנכרון מקובץ אקסל — גיליון ' + sheets.join(', '), by: DB.user.name }], source: 'excel', ...stamp });
+      } else {
+        oid = existing.id; const diffs = [];
+        const cmp = (f, l, fmt) => { const nv = xo[f]; const ov = existing[f]; if (nv == null || nv === '') return;
+          const same = typeof nv === 'number' ? Math.abs((ov || 0) - nv) < 1 : String(ov || '') === String(nv); if (!same) diffs.push({ f, l, ov, nv, fmt }); };
+        cmp('budgetTotal', 'סכום ההזמנה (כולל מע"מ)', money); cmp('utilized', 'ניצול (ללא מע"מ)', money); cmp('endDate', 'סוף תוקף', dfmt); cmp('startDate', 'תחילת תוקף', dfmt);
+        cmp('demandNumber', 'מספר דרישה', String); cmp('supplier', 'ספק', String); cmp('profession', 'מקצוע', String); cmp('owner', 'אחראי/ת', String); cmp('planWork', 'עבודת תכנון', String);
+        if (!existing.projectId && pid) diffs.push({ f: 'projectId', l: 'פרויקט', ov: '', nv: pid, fmt: (x) => (byId('projects', x) || res.newProj.find((y) => y.id === x) || {}).name || x });
+        const dd = existing.closed ? diffs.filter((x) => x.f !== 'utilized') : diffs;
+        if (dd.length) res.changed.push({ o: existing, diffs: dd, xo }); else res.same++;
+      }
+      // חשבונות
+      const have = S.invoices.filter((i) => i.orderId === oid || i.orderNumber === num);
+      const seen = new Set();
+      for (const inv of invoices) {
+        const key = pyNorm(inv.label) + '|' + Math.round(inv.amount || 0); if (seen.has(key)) continue; seen.add(key);
+        const ex = have.find((i) => pyNorm(i.label) + '|' + Math.round(i.amount || 0) === key);
+        const old = (inv.date && inv.date < addDays(t, -120)) || ((existing ? existing.endDate : p.end) || '9999') < t || (!inv.date && !inv.returned);
+        if (!ex) {
+          const status = inv.deal ? 'paid' : old ? 'archived' : /^\d{4}-/.test(inv.returned || '') ? 'submitted' : 'received';
+          res.newInv.push({ id: 'xi-' + num + '-' + await sha10(key), orderId: oid, orderNumber: num, label: inv.label, amount: inv.amount, number: inv.num, date: inv.date, returned: inv.returned, via: inv.via, deal: inv.deal,
+            status, statusAt: status === 'archived' || status === 'paid' ? (inv.date || p.start || t) : NOW, dates: { [status]: inv.date || '' }, source: 'excel', log: [{ by: 'סנכרון אקסל', at: NOW, text: 'נקלט מהאקסל', type: 'system' }], ...stamp });
+        } else {
+          const patch = {}; ['number', 'date', 'deal', 'returned', 'via'].forEach((f) => { const nv = inv[f === 'number' ? 'num' : f]; if (nv && !ex[f]) patch[f] = nv; });
+          if (inv.deal && ex.status !== 'paid') { patch.status = 'paid'; patch.statusAt = NOW; patch.dates = { ...(ex.dates || {}), paid: t }; }
+          if (Object.keys(patch).length) res.updInv.push({ i: ex, patch });
+        }
+      }
+    }
+    // דרישות
+    const dem = new Map();
+    const addDem = async (r) => { if (!/^88\d{6}$/.test(r.demand || '')) return; if (!dem.has(r.demand)) dem.set(r.demand, { demandNumber: r.demand, amount: r.demandSum, excelBalance: r.demandBal, projectId: await projId(r.project), owner: PERSON_SHEETS.includes(r.sheet) ? r.sheet : '', pendingItems: [] });
+      const d = dem.get(r.demand); if (d.amount == null && r.demandSum != null) d.amount = r.demandSum; if (d.excelBalance == null && r.demandBal != null) d.excelBalance = r.demandBal; return d; };
+    for (const r of parsed.rows) await addDem(r);
+    for (const r of parsed.pendingDem) { if (parsed.rows.some((o) => o.demand === r.demand && normProf(o.prof) && normProf(o.prof) === normProf(r.title))) continue; const d = await addDem(r); if (d && !d.pendingItems.some((x) => x.title === r.title)) d.pendingItems.push({ title: r.title, amount: r.amount, planWork: r.planWork, note: r.note }); }
+    for (const [num, d] of dem) {
+      const ex = S.demands.find((x) => x.demandNumber === num);
+      if (!ex) res.demands.push(['new', { id: 'xd-' + num, ...d, source: 'excel', ...stamp }]);
+      else { const patch = {}; if (d.amount != null && Math.abs((ex.amount || 0) - d.amount) >= 1) patch.amount = d.amount;
+        if (d.excelBalance != null && Math.abs((ex.excelBalance || 0) - d.excelBalance) >= 1) patch.excelBalance = d.excelBalance;
+        const items = d.pendingItems.filter((x) => !(ex.pendingItems || []).some((y) => y.title === x.title) && !(ex.removedItems || []).includes(x.title)); if (items.length) patch.pendingItems = [...(ex.pendingItems || []), ...items];
+        if (Object.keys(patch).length) res.demands.push(['upd', { ...ex, ...patch }]); }
+    }
+    return res;
+  }
+  async function handleXlsx(file) {
+    if (!window.XLSX) return toast('ספריית אקסל לא נטענה', 'error');
+    toast('קורא את קובץ האקסל…');
+    try {
+      const wb = XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: false });
+      const parsed = parseWorkbook(wb);
+      if (!parsed.rows.length) return toast('לא נמצאו בקובץ שורות של הזמנות (עמודת "מספר הזמנה")', 'error');
+      S._sync = await buildSync(parsed); S._sync.file = file.name; S._sync.sel = new Set(S._sync.changed.map((c) => c.o.id));
+      openSyncPreview();
+    } catch (e) { console.error(e); toast('שגיאה בקריאת האקסל: ' + e.message, 'error'); }
+  }
+  function openSyncPreview() {
+    const r = S._sync; const tab = S._syncTab || 'changed';
+    const tabs = [['changed', `הזמנות שהשתנו (${r.changed.length})`], ['new', `הזמנות חדשות (${r.newOrders.length})`], ['inv', `חשבונות (${r.newInv.length + r.updInv.length})`], ['dem', `דרישות (${r.demands.length})`], ['other', `פרויקטים ואנשים (${r.newProj.length + r.newPeople.length})`]];
+    let body = '';
+    if (tab === 'changed') body = r.changed.map((c) => `<div class="sync-row"><label><input type="checkbox" data-syncsel="${c.o.id}" ${r.sel.has(c.o.id) ? 'checked' : ''}> <b>${esc(c.o.orderNumber)}</b> <span class="sub">${esc(c.o.supplier || '')}</span></label>
+      <div class="sync-diffs">${c.diffs.map((d) => `<span>${d.l}: <s>${esc(d.fmt(d.ov) || '—')}</s> ← <b>${esc(d.fmt(d.nv))}</b></span>`).join('')}</div></div>`).join('') || '<div class="empty">אין שינויים בהזמנות הקיימות</div>';
+    if (tab === 'new') body = r.newOrders.map((o) => `<div class="sync-row"><b>${esc(o.orderNumber)}</b> <span class="sub">${esc(o.supplier || '')} · ${esc(o.description || '')} · ${money(o.budgetTotal)} · עד ${dfmt(o.endDate)}</span></div>`).join('') || '<div class="empty">אין הזמנות חדשות</div>';
+    if (tab === 'inv') { const by = {}; r.newInv.forEach((i) => { by[i.status] = (by[i.status] || 0) + 1; });
+      body = `<p>${r.newInv.length} חשבונות חדשים: ${Object.entries(by).map(([k, v]) => `${v} ${INV_ST[k].l}`).join(', ')}. ${r.updInv.length} חשבונות קיימים יעודכנו.</p>
+        <p class="sub">חשבונות ישנים (לפני יותר מ‑120 יום, בהזמנה שהסתיימה או בלי שום תאריך) נכנסים כ"היסטורי" ולא מקפיצים התראות. חשבון עם חשבונית עסקה נכנס כ"שולם".</p>
+        ${r.newInv.filter((i) => INV_OPEN.includes(i.status)).map((i) => `<div class="sync-row">${esc(i.label)} · הזמנה ${esc(i.orderNumber)} · ${money(i.amount)} · <span class="pill ${INV_ST[i.status].c}">${INV_ST[i.status].l}</span></div>`).join('')}`; }
+    if (tab === 'dem') body = r.demands.map(([k, d]) => `<div class="sync-row"><span class="pill ${k === 'new' ? 'ok' : 'blue'}">${k === 'new' ? 'חדשה' : 'עדכון'}</span> <b>${esc(d.demandNumber)}</b> <span class="sub">${money(d.amount)}${(d.pendingItems || []).length ? ' · ממתין: ' + d.pendingItems.map((x) => esc(x.title)).join(', ') : ''}</span></div>`).join('') || '<div class="empty">אין</div>';
+    if (tab === 'other') body = `${r.newProj.length ? `<div class="section-t">פרויקטים חדשים</div><div class="chips">${r.newProj.map((p) => `<span class="chip">${esc(p.name)}</span>`).join('')}</div>` : ''}
+      ${r.newPeople.length ? `<div class="section-t">אנשי קשר חדשים</div><div class="chips">${r.newPeople.map((p) => `<span class="chip">${esc(p.name)}</span>`).join('')}</div>` : ''}` || '<div class="empty">אין</div>';
+    const total = r.sel.size + r.newOrders.length + r.newInv.length + r.updInv.length + r.demands.length + r.newProj.length + r.newPeople.length;
+    modal(`סנכרון מאקסל · ${esc(r.file)}`, `<div class="banner">נבדקו ${r.changed.length + r.newOrders.length + r.same} הזמנות. ${r.same} זהות לאתר, ${r.changed.length} השתנו, ${r.newOrders.length} חדשות.</div>
+      <div class="j-tabs">${tabs.map(([k, l]) => `<span class="${tab === k ? 'on' : ''}" data-act="sync-tab" data-v="${k}">${l}</span>`).join('')}</div>
+      ${tab === 'changed' && r.changed.length ? `<div style="margin-bottom:8px"><button class="btn sm" data-act="sync-all">${r.sel.size === r.changed.length ? 'בטל הכל' : 'סמן הכל'}</button> <span class="sub">רק השינויים המסומנים יעודכנו</span></div>` : ''}
+      <div class="sync-list">${body}</div>`, `<button class="btn primary" data-act="sync-apply" ${total ? '' : 'disabled'}>עדכן את האתר</button><button class="btn" data-act="close">ביטול</button>`, 'wide');
+  }
+  async function applySync() {
+    const r = S._sync; const items = []; const t = today();
+    r.newProj.forEach((p) => items.push(['projects', p.id, p])); r.newPeople.forEach((p) => items.push(['people', p.id, p]));
+    r.newOrders.forEach((o) => items.push(['orders', o.id, o]));
+    r.changed.filter((c) => r.sel.has(c.o.id)).forEach(({ o, diffs, xo }) => {
+      const u = { ...o, updatedAt: new Date().toISOString(), updatedBy: DB.user.name }; const hist = [...(o.history || [])];
+      diffs.forEach((d) => { u[d.f] = d.nv;
+        if (d.f === 'budgetTotal') { u.budgetExVat = xo.budgetExVat; u.vat = xo.vat; const delta = (xo.budgetExVat || 0) - (o.budgetExVat || 0); if (Math.abs(delta) >= 1) hist.push({ type: delta > 0 ? 'increase' : 'decrease', amount: Math.abs(Math.round(delta)), date: t, note: 'לפי סנכרון אקסל', by: DB.user.name }); }
+        if (d.f === 'endDate') hist.push({ type: 'extend', newEnd: d.nv, date: t, note: 'לפי סנכרון אקסל', by: DB.user.name }); });
+      const other = diffs.filter((d) => !['budgetTotal', 'endDate'].includes(d.f)); if (other.length) hist.push({ type: 'note', date: t, note: 'עודכן מאקסל: ' + other.map((d) => d.l).join(', '), by: DB.user.name });
+      u.history = hist; items.push(['orders', o.id, u]); });
+    r.newInv.forEach((i) => items.push(['invoices', i.id, i]));
+    r.updInv.forEach(({ i, patch }) => items.push(['invoices', i.id, { ...i, ...patch, log: [...(i.log || []), logEntry('עודכן בסנכרון אקסל: ' + Object.keys(patch).join(', '))] }]));
+    r.demands.forEach(([, d]) => items.push(['demands', d.id, d]));
+    if (!items.length) return toast('אין מה לעדכן');
+    toast('מעדכן…'); await DB.bulkWrite(items, (a, b) => toast(`נשמרו ${a} מתוך ${b}`));
+    DB.log('סנכרן/ה מאקסל', 'sync', `${items.length} רשומות · ${r.file}`); S._sync = null; closeModal(); toast(`הסנכרון הסתיים — ${items.length} עדכונים`, 'ok');
   }
 
   /* ---------------- פיתקיות ---------------- */
@@ -1990,12 +2545,16 @@ window.DEMO_SEED = function () {
     agreements: [['agreementNumber', 'מספר הסכם'], ['demandNumber', 'מספר דרישה'], ['name', 'שם ההסכם'], ['contractor', 'קבלן'], ['kind', 'סוג'], ['targetValue', 'ערך יעד'],
       ['utilized', 'נוצל'], ['utilPct', '% ניצול'], ['startDate', 'תחילה'], ['endDate', 'סיום'], ['daysLeft', 'ימים לסיום'], ['status', 'סטטוס']],
     tasks: [['title', 'משימה'], ['priority', 'עדיפות'], ['status', 'סטטוס'], ['assignee', 'אחראי/ת'], ['dueDate', 'תאריך יעד'], ['category', 'קטגוריה'], ['link', 'קישורים'], ['tagsTxt', 'תגיות'], ['subs', 'תתי‑משימות'], ['lastLog', 'עדכון אחרון'], ['createdBy', 'נוצרה ע"י'], ['description', 'פירוט']],
+    invoices: [['orderNumber', 'הזמנה'], ['label', 'חשבון'], ['supplier', 'ספק'], ['projectName', 'פרויקט'], ['owner', 'אחראי/ת'], ['amount', 'סכום כולל מע"מ'], ['number', 'מספר חשבון'],
+      ['date', 'תאריך הגשה'], ['deal', 'חשבונית עסקה'], ['statusL', 'סטטוס'], ['daysIn', 'ימים בסטטוס']],
+    demands: [['demandNumber', 'מספר דרישה'], ['projectName', 'פרויקט'], ['owner', 'אחראי/ת'], ['amount', 'סכום הדרישה'], ['ordered', 'הוזמן'], ['balance', 'יתרה'], ['nOrders', 'הזמנות'], ['pendingTxt', 'ממתין להזמנה'], ['statusL', 'סטטוס']]
   };
   const DEFAULT_COLS = { orders: ['orderNumber', 'demandNumber', 'supplier', 'demandBudget', 'budgetExVat', 'utilPct', 'startDate', 'endDate', 'status'],
     agreements: ['agreementNumber', 'demandNumber', 'name', 'contractor', 'targetValue', 'utilPct', 'startDate', 'endDate', 'status'],
-    tasks: ['title', 'priority', 'status', 'assignee', 'dueDate', 'subs', 'lastLog'] };
-  const SEC_NAME = { orders: 'הזמנות עבודה', agreements: 'הסכמים וחוזים', tasks: 'משימות' };
-  const SEC_COLOR = { orders: '#2563eb', agreements: '#0d9488', tasks: '#ea7a0c' };
+    tasks: ['title', 'priority', 'status', 'assignee', 'dueDate', 'subs', 'lastLog'],
+    invoices: ['orderNumber', 'label', 'supplier', 'owner', 'amount', 'number', 'date', 'statusL', 'daysIn'], demands: ['demandNumber', 'projectName', 'owner', 'amount', 'ordered', 'balance', 'pendingTxt', 'statusL'] };
+  const SEC_NAME = { orders: 'הזמנות עבודה', invoices: 'חשבונות', demands: 'דרישות', agreements: 'הסכמים וחוזים', tasks: 'משימות' };
+  const SEC_COLOR = { orders: '#2563eb', invoices: '#0284c7', demands: '#7c3aed', agreements: '#0d9488', tasks: '#ea7a0c' };
   function defaultReport() {
     return { link: '', title: 'דוח מצב', sections: ['orders', 'agreements', 'tasks'], cols: JSON.parse(JSON.stringify(DEFAULT_COLS)), status: 'active', from: '', to: '', text: '', taskStatus: 'open', priority: 'all' };
   }
@@ -2008,7 +2567,7 @@ window.DEMO_SEED = function () {
       if (ty === 'order') rel.orders.push(byId('orders', lid)); if (ty === 'agreement') rel.agreements.push(byId('agreements', lid)); }
     const inRel = (col, x) => !rel || rel[col].includes(x);
     if (R.sections.includes('orders')) out.orders = S.orders.filter((o) => inRel('orders', o) && match(o, R.text) && inRange(o.endDate)).filter((o) => { const k = orderStatus(o).k;
-      return R.status === 'all' || (R.status === 'active' && ['active', 'soon', 'ending'].includes(k)) || (R.status === 'ending' && ['soon', 'ending'].includes(k)) || (R.status === 'closed' && ['ended', 'linked', 'cancelled'].includes(k)); })
+      return R.status === 'all' || (R.status === 'active' && ['active', 'soon', 'ending'].includes(k)) || (R.status === 'ending' && ['soon', 'ending'].includes(k)) || (R.status === 'closed' && ['ended', 'linked', 'cancelled', 'closed'].includes(k)); })
       .sort((a, b) => (a.endDate || '').localeCompare(b.endDate || ''))
       .map((o) => ({ ...o, projectName: (byId('projects', o.projectId) || {}).name || '', utilPct: pct(o.utilized || 0, o.budgetExVat), daysLeft: daysLeft(o.endDate), status: orderStatus(o).l }));
     if (R.sections.includes('agreements')) out.agreements = S.agreements.filter((a) => inRel('agreements', a) && match(a, R.text) && inRange(a.endDate)).filter((a) => { const k = agreeStatus(a).k;
@@ -2022,16 +2581,27 @@ window.DEMO_SEED = function () {
       .map((t) => ({ ...t, _subtasks: t.subtasks || [], subs: subStats(t).total ? `${subStats(t).done}/${subStats(t).total}` : '',
         lastLog: (() => { const c = (t.comments || []).filter((x) => x.type !== 'system').sort((a, b) => (b.at || '').localeCompare(a.at || ''))[0]; return c ? `${fmtDT(c.at)} — ${c.text}` : ''; })(), priority: (PRIORITY[t.priority] || PRIORITY.normal).l, status: (TSTATUS[t.status] || TSTATUS.new).l,
         link: linksOf(t).map((x) => entName(x.type, x.id)).join(', '), tagsTxt: (t.tags || []).map((g) => '#' + g).join(' ') }));
+    if (R.sections.includes('invoices')) out.invoices = S.invoices.filter((i) => { const o = invOrder(i); return (!rel || rel.orders.includes(o)) && (match(i, R.text) || match(o, R.text)) && inRange(i.date); })
+      .filter((i) => R.status === 'all' || (R.status === 'closed' ? ['paid', 'archived'].includes(i.status) : INV_OPEN.includes(i.status)))
+      .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))
+      .map((i) => { const o = invOrder(i); return { ...i, orderNumber: o.orderNumber || i.orderNumber, supplier: o.supplier || '', owner: o.owner || '', projectName: (byId('projects', o.projectId) || {}).name || '',
+        statusL: (INV_ST[i.status] || {}).l || '', daysIn: INV_OPEN.includes(i.status) ? invDays(i) : '' }; });
+    if (R.sections.includes('demands')) out.demands = S.demands.filter((d) => (!rel || demandOrders(d).some((o) => rel.orders.includes(o)) || (R.link === 'project:' + d.projectId)) && match(d, R.text))
+      .map((d) => ({ d, c: demandCalc(d) })).filter(({ c }) => R.status === 'all' || (R.status === 'closed' ? ['used', 'cancelled'].includes(c.st.k) : !['used', 'cancelled'].includes(c.st.k)))
+      .map(({ d, c }) => ({ ...d, projectName: (byId('projects', d.projectId) || {}).name || '', ordered: c.ordered, balance: c.bal, nOrders: c.os.length,
+        pendingTxt: (d.pendingItems || []).map((x) => x.title).join(', '), statusL: c.st.l }));
     return out;
   }
-  const MONEY_KEYS = ['demandBudget', 'budgetExVat', 'budgetTotal', 'utilized', 'targetValue'];
-  const DATE_KEYS = ['startDate', 'endDate', 'dueDate'];
+  const MONEY_KEYS = ['demandBudget', 'budgetExVat', 'budgetTotal', 'utilized', 'targetValue', 'amount', 'ordered', 'balance'];
+  const DATE_KEYS = ['startDate', 'endDate', 'dueDate', 'date'];
   const cellText = (k, v) => (v == null || v === '' ? '' : MONEY_KEYS.includes(k) ? money(v) : DATE_KEYS.includes(k) ? dfmt(v) : k === 'utilPct' ? v + '%' : String(v));
 
   function reportHTML(R, data) {
     return `<div class="report-doc"><h1>${esc(R.title)}</h1><div class="meta">הופק ב‑${new Date().toLocaleString('he-IL')} · ע"י ${esc(DB.user.name)}${R.from || R.to ? ` · טווח: ${dfmt(R.from)} – ${dfmt(R.to)}` : ''}</div>
-      ${Object.entries(data).map(([sec, rows]) => { const cols = REPORT_COLS[sec].filter(([k]) => R.cols[sec].includes(k));
-        const sums = sec === 'orders' ? `<div class="sum"><div>${rows.length} הזמנות</div><div>תקציב: ${money(rows.reduce((s, r) => s + (r.budgetExVat || 0), 0))}</div><div>נוצל: ${money(rows.reduce((s, r) => s + (r.utilized || 0), 0))}</div></div>`
+      ${Object.entries(data).map(([sec, rows]) => { const cols = REPORT_COLS[sec].filter(([k]) => (R.cols[sec] || DEFAULT_COLS[sec]).includes(k));
+        const sums = sec === 'invoices' ? `<div class="sum"><div>${rows.length} חשבונות</div><div>סה"כ: ${money(rows.reduce((s, r) => s + (r.amount || 0), 0))}</div></div>`
+          : sec === 'demands' ? `<div class="sum"><div>${rows.length} דרישות</div><div>סה"כ דרישות: ${money(rows.reduce((s, r) => s + (r.amount || 0), 0))}</div><div>הוזמן: ${money(rows.reduce((s, r) => s + (r.ordered || 0), 0))}</div></div>`
+          : sec === 'orders' ? `<div class="sum"><div>${rows.length} הזמנות</div><div>תקציב: ${money(rows.reduce((s, r) => s + (r.budgetExVat || 0), 0))}</div><div>נוצל: ${money(rows.reduce((s, r) => s + (r.utilized || 0), 0))}</div></div>`
           : sec === 'agreements' ? `<div class="sum"><div>${rows.length} הסכמים</div><div>ערך יעד: ${money(rows.reduce((s, r) => s + (r.targetValue || 0), 0))}</div></div>`
             : `<div class="sum"><div>${rows.length} משימות</div></div>`;
         return `<h2 style="background:${SEC_COLOR[sec]}">${SEC_NAME[sec]}</h2>${sums}<table><thead><tr>${cols.map(([, l]) => `<th>${l}</th>`).join('')}</tr></thead>
@@ -2070,7 +2640,7 @@ window.DEMO_SEED = function () {
           </select></div>
         </div>
         ${R.sections.map((sec) => `<details style="margin-bottom:8px"><summary style="cursor:pointer;font-weight:600">עמודות — ${SEC_NAME[sec]}</summary><div class="chips" style="margin-top:8px">
-          ${REPORT_COLS[sec].map(([k, l]) => `<span class="chip ${R.cols[sec].includes(k) ? 'on' : ''}" data-act="rcol" data-sec="${sec}" data-v="${k}">${l}</span>`).join('')}</div></details>`).join('')}
+          ${REPORT_COLS[sec].map(([k, l]) => `<span class="chip ${(R.cols[sec] || DEFAULT_COLS[sec]).includes(k) ? 'on' : ''}" data-act="rcol" data-sec="${sec}" data-v="${k}">${l}</span>`).join('')}</div></details>`).join('')}
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
           <button class="btn primary" data-act="export-xlsx" style="background:#16a34a">⬇ Excel</button>
           <button class="btn danger" data-act="export-pdf" style="background:#dc2626;color:#fff">⬇ PDF</button>
@@ -2084,7 +2654,7 @@ window.DEMO_SEED = function () {
   function exportXlsx(R) {
     const data = reportData(R); const wb = XLSX.utils.book_new(); wb.Workbook = { Views: [{ RTL: true }] };
     Object.entries(data).forEach(([sec, rows]) => {
-      const cols = REPORT_COLS[sec].filter(([k]) => R.cols[sec].includes(k));
+      const cols = REPORT_COLS[sec].filter(([k]) => (R.cols[sec] || DEFAULT_COLS[sec]).includes(k));
       const aoa = [cols.map(([, l]) => l), ...rows.map((r) => cols.map(([k]) => { const v = r[k]; if (v == null) return ''; if (DATE_KEYS.includes(k)) return dfmt(v); return v; }))];
       const ws = XLSX.utils.aoa_to_sheet(aoa);
       ws['!cols'] = cols.map(([k]) => ({ wch: ['description', 'name', 'title', 'supplier'].includes(k) ? 34 : 15 }));
@@ -2128,6 +2698,7 @@ window.DEMO_SEED = function () {
           <div class="field"><label>התראה מוקדמת (ימים)</label><input name="warnDays" type="number" value="${st.warnDays}"></div>
           <div class="field"><label>אזהרת ניצול (%)</label><input name="utilWarn" type="number" value="${st.utilWarn}"></div>
           <div class="field"><label>ניצול קריטי (%)</label><input name="utilCritical" type="number" value="${st.utilCritical}"></div>
+          <div class="field"><label>חשבון "תקוע" אחרי (ימים)</label><input name="invoiceStuckDays" type="number" value="${st.invoiceStuckDays || 14}"></div>
         </div></form>
         <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn primary" data-act="save-settings">שמירה</button>
           <button class="btn" data-act="notif">🔔 הפעל התראות בדפדפן</button><button class="btn" data-act="unsnooze">החזר התראות מושתקות</button></div>
@@ -2137,6 +2708,7 @@ window.DEMO_SEED = function () {
         ${DB.mode === 'demo' ? `<div class="banner warn">מצב הדגמה: הנתונים נשמרים רק בדפדפן הזה. לחיבור אמיתי מלא את <b>js/firebase-config.js</b> (הוראות ב‑README).</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"><button class="btn" data-act="role" data-v="commander">כניסה כמפקד</button><button class="btn" data-act="role" data-v="assistant">כניסה כרל"שית</button><button class="btn danger" data-act="reset-demo">איפוס הדגמה</button></div>`
           : `<button class="btn" data-act="switch-user" style="margin-bottom:12px">החלף משתמש במכשיר הזה</button>`}
+        <div class="banner" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">🔄 <span style="flex:1;min-width:200px">סנכרון מקובץ "מעקב חשבונות מתכננים": הזמנות, חשבונות, דרישות, פרויקטים ואנשי קשר. מוצגת תצוגה מקדימה לפני שמשהו משתנה.</span><button class="btn sm primary" data-act="sync-pick">בחר קובץ אקסל</button></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="backup">⬇ גיבוי JSON</button><label class="btn">⬆ שחזור מגיבוי<input type="file" accept="application/json" id="restore" hidden></label></div>
       </div></div>`;
     return shell(content, 'הגדרות');
@@ -2168,7 +2740,7 @@ window.DEMO_SEED = function () {
   function openDetail(kind, id) {
     S._openDetail = [kind, id];
     if (kind === 'order') openOrder(id); else if (kind === 'agreement') openAgreement(id); else if (kind === 'task') openTask(id);
-    else if (kind === 'picker') openLinkPicker(id); else if (kind.startsWith('ent-')) openEntity(kind.slice(4), id);
+    else if (kind === 'picker') openLinkPicker(id); else if (kind === 'invoice') openInvoice(id); else if (kind === 'demand') openDemand(id); else if (kind === 'merge') openMergeTool(); else if (kind.startsWith('ent-')) openEntity(kind.slice(4), id);
   }
 
   /* ---------------- קליטת PDF ---------------- */
@@ -2212,7 +2784,7 @@ window.DEMO_SEED = function () {
   function render() {
     const r = (location.hash.replace(/^#\/?/, '') || 'dashboard').split('?')[0];
     S.route = NAV.find((x) => x.id === r) ? r : 'dashboard';
-    const V = { dashboard: viewDashboard, orders: viewOrders, agreements: viewAgreements, tasks: viewTasks, projects: viewProjects, people: viewPeople, notes: viewNotes, reports: viewReports, config: viewSettings };
+    const V = { dashboard: viewDashboard, orders: viewOrders, agreements: viewAgreements, tasks: viewTasks, queue: viewQueue, invoices: viewInvoices, demands: viewDemands, owners: viewOwners, projects: viewProjects, people: viewPeople, notes: viewNotes, reports: viewReports, config: viewSettings };
     const active = document.activeElement && document.activeElement.id;
     const pos = active === 'gsearch' ? document.activeElement.selectionStart : null;
     $('#root').innerHTML = V[S.route]();
@@ -2283,6 +2855,8 @@ window.DEMO_SEED = function () {
       ...S.orders.filter((x) => match(x, q)).slice(0, 5).map((x) => ['order', x.id, '📄', `הזמנה ${x.orderNumber}`, x.supplier]),
       ...S.agreements.filter((x) => match(x, q)).slice(0, 5).map((x) => ['agreement', x.id, '📑', x.name || x.agreementNumber, x.contractor]),
       ...S.tasks.filter((x) => match(x, q)).slice(0, 5).map((x) => ['task', x.id, '✅', x.title, x.assignee]),
+      ...S.demands.filter((x) => match(x.demandNumber, q)).slice(0, 4).map((x) => ['demand', x.id, '📋', 'דרישה ' + x.demandNumber, (byId('projects', x.projectId) || {}).name || '']),
+      ...S.invoices.filter((x) => x.number && match(x.number, q)).slice(0, 4).map((x) => ['invoice', x.id, '🧾', `${x.label || 'חשבון'} ${x.number}`, 'הזמנה ' + (invOrder(x).orderNumber || '')]),
       ...S.projects.filter((x) => match(x, q)).slice(0, 5).map((x) => ['ent-project', x.id, '🏗️', x.name, 'תיק פרויקט']),
       ...S.people.filter((x) => match(x, q)).slice(0, 5).map((x) => ['ent-person', x.id, '👤', x.name, [x.role, x.company].filter(Boolean).join(' · ')]),
       ...allTags().filter((x) => x.includes(q)).slice(0, 3).map((x) => ['ent-tag', x, '#', '#' + x, 'תגית']),
@@ -2308,10 +2882,14 @@ window.DEMO_SEED = function () {
     if (tg.subDue) { const t = byId('tasks', tg.tid); const x = (t.subtasks || []).find((y) => y.id === tg.subDue); const v = e.target.value;
       await updateSubs(tg.tid, (l) => { l.find((z) => z.id === tg.subDue).dueDate = v; }, `יעד לתת‑משימה "${x ? x.title : ''}" ${v ? 'נקבע ל‑' + dfmt(v) : 'הוסר'}`); return; }
     if (e.target.dataset.fsel) { S.f[e.target.dataset.fsel] = e.target.value; render(); }
+    if (e.target.dataset.qsel) { const sel = S._qsel || (S._qsel = new Set()); e.target.checked ? sel.add(e.target.dataset.qsel) : sel.delete(e.target.dataset.qsel); render(); return; }
+    if (e.target.dataset.syncsel) { const r = S._sync; e.target.checked ? r.sel.add(e.target.dataset.syncsel) : r.sel.delete(e.target.dataset.syncsel); return; }
+    if (e.target.id === 'syncFile' && e.target.files[0]) { const f = e.target.files[0]; e.target.value = ''; handleXlsx(f); return; }
     if (e.target.dataset.vsel) { vset(e.target.dataset.vsel, e.target.value); render(); }
     if (e.target.dataset.r && e.target.tagName === 'SELECT') { S.report[e.target.dataset.r] = e.target.value; render(); }
   });
   document.addEventListener('click', async (e) => {
+    if (e.target.matches && e.target.matches('input[data-qsel], input[data-syncsel]')) return;
     const go = e.target.closest('[data-go]'); if (go) { location.hash = '#' + go.dataset.go; return; }
     const el = e.target.closest('[data-act]'); if (!el) { if (!e.target.closest('.fab-menu')) { const fm = $('#fabmenu'); fm && fm.classList.remove('open'); } return; }
     const a = el.dataset.act; const id = el.dataset.id;
@@ -2363,6 +2941,41 @@ window.DEMO_SEED = function () {
         DB.log(ty === 'project' ? 'הוסיף/ה פרויקט' : 'הוסיף/ה איש קשר', ty, v); await addLink(id, ty, nid); break; }
       case 'more-nav': modal('תפריט', `<div class="more-nav">${NAV.map((x) => `<a href="#${x.id}" data-act="close-go">${ICONS[x.id === 'config' ? 'settings' : x.id]}<span>${x.label}</span></a>`).join('')}</div>`); break;
       case 'close-go': closeModal(); location.hash = el.getAttribute('href'); break;
+      case 'close-order': openCloseOrder(id); break;
+      case 'do-close': doClose(el.dataset.ids.split(',')); break;
+      case 'reopen-order': { const o = byId('orders', id); await DB.update('orders', id, { closed: false, history: [...(o.history || []), { type: 'reopen', date: today(), by: DB.user.name }] }); toast('ההזמנה נפתחה מחדש', 'ok'); break; }
+      case 'q-snooze': { e.stopPropagation(); await DB.update('orders', id, { queueSnooze: addDays(today(), 7) }); toast('יוזכר בעוד שבוע'); break; }
+      case 'q-more': S._qmore = el.dataset.v; render(); break;
+      case 'q-selall': { const q = queueData(vget('q-owner', '')); const sel = S._qsel || (S._qsel = new Set()); if (q.expired.some((o) => sel.has(o.id))) sel.clear(); else q.expired.forEach((o) => sel.add(o.id)); render(); break; }
+      case 'q-close-sel': openCloseOrder([...S._qsel]); break;
+      case 'new-invoice': openInvoiceEditor(el.dataset.order ? { orderId: el.dataset.order } : {}); break;
+      case 'edit-invoice': openInvoiceEditor(byId('invoices', id)); break;
+      case 'save-invoice': saveInvoice(id); break;
+      case 'inv-st': await setInvStatus(id, el.dataset.v); break;
+      case 'inv-all': S._invAll = true; render(); break;
+      case 'inv-cmt': { const v = $('#invCmt').value.trim(); if (!v) return; const i = byId('invoices', id); $('#invCmt').value = ''; await DB.update('invoices', id, { log: [...(i.log || []), logEntry(v, 'note')] }); break; }
+      case 'util-from-inv': { const o = byId('orders', id); const sum = ordersInvoices(id).filter((i) => !['rejected'].includes(i.status)).reduce((x, i) => x + (i.amount || 0), 0); const u = Math.round((sum / (1 + VAT)) * 100) / 100;
+        if (!(await ask(`לעדכן את הניצול של הזמנה ${o.orderNumber} ל‑${money(u)} (סכום החשבונות ללא מע"מ)?`))) return;
+        await DB.update('orders', id, { utilized: u, history: [...(o.history || []), { type: 'note', date: today(), note: `ניצול עודכן לפי החשבונות: ${money(u)}`, by: DB.user.name }] }); toast('הניצול עודכן', 'ok'); break; }
+      case 'new-demand': openDemandEditor(); break;
+      case 'edit-demand': openDemandEditor(byId('demands', id)); break;
+      case 'save-demand': { const d = readForm($('#demForm')); if (!d.demandNumber) return toast('חובה למלא מספר דרישה', 'error');
+        if (id) await DB.update('demands', id, d); else await DB.add('demands', { ...d, pendingItems: [] }); closeModal(); toast('הדרישה נשמרה', 'ok'); break; }
+      case 'dem-add': { const v = $('#demItem').value.trim(); if (!v) return $('#demItem').focus(); const d = byId('demands', id);
+        await DB.update('demands', id, { pendingItems: [...(d.pendingItems || []), { title: v, amount: n($('#demItemAmt').value) }] }); break; }
+      case 'dem-rm': { const d = byId('demands', id); const it = (d.pendingItems || [])[+el.dataset.k]; const l = (d.pendingItems || []).slice(); l.splice(+el.dataset.k, 1);
+        await DB.update('demands', id, { pendingItems: l, removedItems: [...(d.removedItems || []), it ? it.title : ''] }); break; }
+      case 'dem-order': { const d = byId('demands', id); const it = d.pendingItems[+el.dataset.k]; S._demOrder = { id, k: +el.dataset.k };
+        openOrderEditor({ demandNumber: d.demandNumber, projectId: d.projectId, owner: d.owner, profession: it.title, planWork: it.planWork || '', budgetTotal: it.amount || null, budgetExVat: it.amount ? Math.round(it.amount / (1 + VAT)) : null, demandBudget: d.amount ? Math.round(d.amount / (1 + VAT)) : null }); break; }
+      case 'vgo': if (el.dataset.route === 'orders') { S.f.orderOwner = el.dataset.owner; S.f.orderStatus = 'active'; } else { vset('inv-owner', el.dataset.owner); vset('inv-st', 'open'); } location.hash = '#' + el.dataset.route; break;
+      case 'merge-tool': openMergeTool(); break;
+      case 'merge': await mergePeople(el.dataset.keep, el.dataset.drop); setTimeout(openMergeTool, 300); break;
+      case 'merge-manual': await mergePeople($('#mKeep').value, $('#mDrop').value); setTimeout(openMergeTool, 300); break;
+      case 'merge-ignore': { const st = settings(); await DB.set('settings', 'main', { dupIgnore: [...(st.dupIgnore || []), el.dataset.key] }); setTimeout(openMergeTool, 200); break; }
+      case 'sync-pick': $('#syncFile').click(); break;
+      case 'sync-tab': S._syncTab = el.dataset.v; openSyncPreview(); break;
+      case 'sync-all': { const r = S._sync; if (r.sel.size === r.changed.length) r.sel.clear(); else r.changed.forEach((c) => r.sel.add(c.o.id)); openSyncPreview(); break; }
+      case 'sync-apply': applySync(); break;
       case 'vset': vset(el.dataset.page + '-' + el.dataset.k, el.dataset.v); render(); break;
       case 'jump': { const t = document.getElementById(el.dataset.to); t && t.scrollIntoView({ behavior: 'smooth', block: 'start' }); break; }
       case 'new-project': openProjectEditor(); break;
@@ -2416,8 +3029,8 @@ window.DEMO_SEED = function () {
         S.report = { ...defaultReport(), ...presets[+el.dataset.i], title: el.textContent.replace(/^\S+\s/, '').trim() }; render(); break; }
       case 'rp': if (e.target.dataset.act === 'rp-del') break; S.report = JSON.parse(JSON.stringify(settings().reportPresets[+el.dataset.i])); render(); break;
       case 'rp-del': { e.stopPropagation(); const p = (settings().reportPresets || []).slice(); p.splice(+el.dataset.i, 1); await DB.set('settings', 'main', { reportPresets: p }); break; }
-      case 'rsec': { const s = S.report.sections; const v = el.dataset.v; S.report.sections = s.includes(v) ? s.filter((x) => x !== v) : [...s, v].sort((a, b) => ['orders', 'agreements', 'tasks'].indexOf(a) - ['orders', 'agreements', 'tasks'].indexOf(b)); render(); break; }
-      case 'rcol': { const c = S.report.cols[el.dataset.sec]; const v = el.dataset.v; S.report.cols[el.dataset.sec] = c.includes(v) ? c.filter((x) => x !== v) : REPORT_COLS[el.dataset.sec].map(([k]) => k).filter((k) => c.includes(k) || k === v); render(); break; }
+      case 'rsec': { const s = S.report.sections; const v = el.dataset.v; S.report.sections = s.includes(v) ? s.filter((x) => x !== v) : [...s, v].sort((a, b) => Object.keys(SEC_NAME).indexOf(a) - Object.keys(SEC_NAME).indexOf(b)); render(); break; }
+      case 'rcol': { const c = S.report.cols[el.dataset.sec] || DEFAULT_COLS[el.dataset.sec].slice(); const v = el.dataset.v; S.report.cols[el.dataset.sec] = c.includes(v) ? c.filter((x) => x !== v) : REPORT_COLS[el.dataset.sec].map(([k]) => k).filter((k) => c.includes(k) || k === v); render(); break; }
       case 'export-xlsx': exportXlsx(S.report); break;
       case 'export-pdf': exportPdf(S.report); break;
       case 'export-print': exportPrint(S.report); break;
@@ -2441,6 +3054,8 @@ window.DEMO_SEED = function () {
   });
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && (e.target.dataset?.sedit || e.target.dataset?.tedit === 'title')) { e.preventDefault(); e.target.blur(); return; }
+    if (e.key === 'Enter' && e.target.id === 'invCmt') { e.preventDefault(); $('[data-act=inv-cmt]').click(); return; }
+    if (e.key === 'Enter' && e.target.id === 'demItem') { e.preventDefault(); $('[data-act=dem-add]').click(); return; }
     if (e.key === 'Enter' && e.target.id === 'subCmt') { e.preventDefault(); $('[data-act=sub-comment]').click(); return; }
     if (e.key === 'Enter' && e.target.dataset?.tagAdd) { e.preventDefault(); const tid = e.target.dataset.tagAdd; const v = e.target.value.trim().replace(/^#/, ''); if (!v) return; const t = byId('tasks', tid);
       if (!(t.tags || []).includes(v)) DB.update('tasks', tid, { tags: [...(t.tags || []), v], comments: [...(t.comments || []), logEntry('נוספה תגית #' + v)] }); e.target.value = ''; return; } if (e.key === 'Escape') closeModal(); if (e.key === 'Enter' && e.target.id === 'subTitle') { e.preventDefault(); $('[data-act=sub-add]').click(); }
@@ -2448,10 +3063,10 @@ window.DEMO_SEED = function () {
 
   /* גרירת PDF לכל מקום בעמוד */
   let dragDepth = 0;
-  window.addEventListener('dragenter', (e) => { if (!e.dataTransfer.types.includes('Files')) return; dragDepth++; if (!$('.page-drop')) document.body.insertAdjacentHTML('beforeend', '<div class="page-drop"><div>📥 שחרר כאן את קובץ ההזמנה</div></div>'); });
+  window.addEventListener('dragenter', (e) => { if (!e.dataTransfer.types.includes('Files')) return; dragDepth++; if (!$('.page-drop')) document.body.insertAdjacentHTML('beforeend', '<div class="page-drop"><div>📥 שחרר כאן: PDF של הזמנה, או אקסל לסנכרון</div></div>'); });
   window.addEventListener('dragleave', () => { dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) { const p = $('.page-drop'); p && p.remove(); } });
   window.addEventListener('dragover', (e) => { if (e.dataTransfer.types.includes('Files')) e.preventDefault(); });
-  window.addEventListener('drop', (e) => { if (!e.dataTransfer.files.length) return; e.preventDefault(); dragDepth = 0; const p = $('.page-drop'); p && p.remove(); handlePdf(e.dataTransfer.files[0]); });
+  window.addEventListener('drop', (e) => { if (!e.dataTransfer.files.length) return; e.preventDefault(); dragDepth = 0; const p = $('.page-drop'); p && p.remove(); { const f = e.dataTransfer.files[0]; /\.(xlsx|xlsm|xls)$/i.test(f.name) ? handleXlsx(f) : handlePdf(f); }; });
 
   /* התראות דפדפן — פעם ביום */
   function notifyDue(force) {
@@ -2490,7 +3105,7 @@ window.DEMO_SEED = function () {
   DB.init().then((user) => {
     if (!user) return loginView();
     if (user.needsProfile) return profileView();
-    ['orders', 'agreements', 'tasks', 'notes', 'activity', 'projects', 'people'].forEach((c) => DB.subscribe(c, (arr) => { S[c] = arr; scheduleRender(); }));
+    ['orders', 'agreements', 'tasks', 'notes', 'activity', 'projects', 'people', 'invoices', 'demands'].forEach((c) => DB.subscribe(c, (arr) => { S[c] = arr; scheduleRender(); }));
     DB.subscribe('settings', (arr) => { S.settingsDocs = arr; scheduleRender(); });
     window.addEventListener('hashchange', () => { S.q = ''; const sr = $('#search-results'); sr && (sr.innerHTML = ''); render(); window.scrollTo(0, 0); });
     let lastW = window.innerWidth; window.addEventListener('resize', () => { if ((lastW > 760) !== (window.innerWidth > 760)) render(); lastW = window.innerWidth; });
