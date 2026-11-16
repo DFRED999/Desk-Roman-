@@ -707,16 +707,45 @@ window.DEMO_SEED = function () {
   };
 
   /* גיבוי ושחזור */
+  const BACKUP_COLS = ['orders', 'agreements', 'tasks', 'notes', 'projects', 'people'];
   DB.exportAll = function (state) {
-    const out = {};
-    ['orders', 'agreements', 'tasks', 'notes', 'settings'].forEach((c) => { out[c] = state[c]; });
+    const out = { exportedAt: nowISO() };
+    BACKUP_COLS.forEach((c) => { out[c] = state[c] || []; });
+    const st = (state.settingsDocs || []).find((d) => d.id === 'main');
+    if (st) out.settings = [st];
     return out;
   };
-  DB.importAll = async function (data) {
-    for (const col of ['orders', 'agreements', 'tasks', 'notes', 'settings']) {
-      for (const item of data[col] || []) { const { id, ...rest } = item; await DB.set(col, id || uid(), rest); }
-    }
+  /** מה ישתנה בשחזור: רשומה חדשה נוספת; קיימת מתעדכנת רק אם בגיבוי היא חדשה יותר */
+  DB.planImport = function (data, state) {
+    const plan = { add: {}, update: {}, skip: {}, items: [] };
+    [...BACKUP_COLS, 'settings'].forEach((col) => {
+      const cur = col === 'settings' ? (state.settingsDocs || []) : (state[col] || []);
+      const byId = {}; cur.forEach((x) => { byId[x.id] = x; });
+      (data[col] || []).forEach((item) => {
+        if (!item || typeof item !== 'object') return;
+        const id = item.id || uid(); const ex = byId[id];
+        const kind = !ex ? 'add' : ((item.updatedAt || '') > (ex.updatedAt || '') ? 'update' : 'skip');
+        plan[kind][col] = (plan[kind][col] || 0) + 1;
+        if (kind !== 'skip') plan.items.push([col, id, item]);
+      });
+    });
+    return plan;
   };
+  DB.importPlan = async function (plan, onProgress) {
+    const items = plan.items.map(([col, id, item]) => { const { id: _x, ...rest } = item; return [col, id, clean(rest)]; });
+    if (!useFirebase) {
+      items.forEach(([col, id, rest]) => { demo[col] = demo[col] || {}; demo[col][id] = rest; });
+      saveDemo(); [...new Set(items.map((x) => x[0]))].forEach(emit); return items.length;
+    }
+    for (let i = 0; i < items.length; i += 100) {
+      const upd = {};
+      items.slice(i, i + 100).forEach(([col, id, rest]) => { upd[col + '/' + id] = rest; });
+      await rt.ref().update(upd);
+      onProgress && onProgress(Math.min(i + 100, items.length), items.length);
+    }
+    return items.length;
+  };
+  DB.importAll = async function (data, state) { return DB.importPlan(DB.planImport(data, state || {})); };
 
   DB.log = function (action, entity, label) {
     return DB.add('activity', { action, entity, label, user: DB.user ? DB.user.name : '' }).catch(() => {});
@@ -854,7 +883,7 @@ window.DEMO_SEED = function () {
   const S = {
     orders: [], agreements: [], tasks: [], notes: [], activity: [], settingsDocs: [], projects: [], people: [],
     route: 'dashboard', q: '',
-    f: { orderStatus: 'all', agreeStatus: 'all', taskAssignee: 'all', taskPriority: 'all', taskLink: 'all', taskView: 'kanban', sort: {} },
+    f: { orderOwner: 'all', orderProject: 'all', orderStatus: 'all', agreeStatus: 'all', taskAssignee: 'all', taskPriority: 'all', taskLink: 'all', taskView: 'kanban', sort: {} },
   };
   const settings = () => Object.assign({ alertDays: 30, warnDays: 60, utilWarn: 80, utilCritical: 90, reportPresets: [], snoozed: {} },
     (S.settingsDocs.find((d) => d.id === 'main') || {}));
@@ -1113,6 +1142,7 @@ window.DEMO_SEED = function () {
     { k: 'orderNumber', l: 'מס׳ הזמנה', cls: 'strong', v: (o) => `${esc(o.orderNumber)}${o.version ? `<div class="sub">גרסה ${esc(o.version)}</div>` : ''}` },
     { k: 'demandNumber', l: 'מס׳ דרישה', v: (o) => esc(o.demandNumber || '—') },
     { k: 'supplier', l: 'ספק', v: (o) => `${esc(o.supplier || '—')}<div class="sub">${esc(o.description || '')}</div>` },
+    { k: 'owner', l: 'אחראי/ת', v: (o) => esc(o.owner || '—') },
     { k: 'demandBudget', l: 'תקציב בדרישה', cls: 'num', v: (o) => money(o.demandBudget) },
     { k: 'budgetExVat', l: 'תקציב בהזמנה', cls: 'num', v: (o) => `${money(o.budgetExVat)}<div class="sub">כולל מע"מ ${money(o.budgetTotal)}</div>` },
     { k: 'utilized', l: 'ניצול', sv: (o) => pct(o.utilized || 0, o.budgetExVat), v: (o) => { const p = pct(o.utilized || 0, o.budgetExVat); return `${bar(p)}<div class="sub">${p}%</div>`; } },
@@ -1122,7 +1152,10 @@ window.DEMO_SEED = function () {
   ];
   function viewOrders() {
     const fs = S.f.orderStatus;
-    let rows = S.orders.filter((o) => match(o, S.q)).filter((o) => { const k = orderStatus(o).k;
+    let rows = S.orders.filter((o) => match(o, S.q))
+      .filter((o) => S.f.orderOwner === 'all' || (o.owner || '') === S.f.orderOwner)
+      .filter((o) => S.f.orderProject === 'all' || (o.projectId || '') === S.f.orderProject)
+      .filter((o) => { const k = orderStatus(o).k;
       return fs === 'all' || (fs === 'active' && ['active', 'soon', 'ending'].includes(k)) || (fs === 'ending' && ['soon', 'ending'].includes(k)) || (fs === 'closed' && ['ended', 'linked', 'cancelled'].includes(k)); });
     rows = sortRows(rows.sort((a, b) => (a.endDate || '').localeCompare(b.endDate || '')), 'orders', ORDER_COLS);
     const chips = [['all', 'הכל'], ['active', 'פעילות'], ['ending', 'מסתיימות בקרוב'], ['closed', 'סגורות / הועברו']];
@@ -1132,6 +1165,10 @@ window.DEMO_SEED = function () {
         <div class="hint">הנתונים יחולצו אוטומטית (מס׳ הזמנה, דרישה, ספק, תקציב, תאריכים, יועצים) ותוכל לבדוק לפני שמירה</div>
         <input type="file" id="dzfile" accept="application/pdf" hidden></div>
       <div class="toolbar"><div class="chips">${chips.map(([k, l]) => `<span class="chip ${fs === k ? 'on' : ''}" data-act="f" data-f="orderStatus" data-v="${k}">${l}</span>`).join('')}</div>
+        ${(() => { const owners = [...new Set(S.orders.map((o) => o.owner).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'he'));
+          return owners.length ? `<select data-fsel="orderOwner"><option value="all">כל האחראים</option>${owners.map((x) => `<option ${S.f.orderOwner === x ? 'selected' : ''}>${esc(x)}</option>`).join('')}</select>` : ''; })()}
+        ${(() => { const ps = S.projects.filter((p) => S.orders.some((o) => o.projectId === p.id)).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'he'));
+          return ps.length ? `<select data-fsel="orderProject" style="max-width:220px"><option value="all">כל הפרויקטים</option>${ps.map((x) => `<option value="${x.id}" ${S.f.orderProject === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>` : ''; })()}
         <div class="spacer"></div><span style="color:var(--muted);font-size:13.5px">${rows.length} הזמנות · ${money(totB)}</span></div>
       ${table('orders', ORDER_COLS, rows, 'order')}
       <div class="mcards">${rows.map((o) => { const s = orderStatus(o); const p = pct(o.utilized || 0, o.budgetExVat); return `<div class="mcard" data-act="open" data-kind="order" data-id="${o.id}">
@@ -1152,6 +1189,7 @@ window.DEMO_SEED = function () {
       ${f('demandNumber', 'מספר דרישה')}${f('supplier', 'שם הספק')}
       ${f('description', 'תיאור ההזמנה', 'text', 'full')}
       ${f('unit', 'יחידה / איש קשר')}${f('buyer', 'קבוצת רכש')}
+      ${f('profession', 'מקצוע')}${f('owner', 'אחראי/ת')}${f('planWork', 'מספר עבודת תכנון')}
       ${f('demandBudget', 'סה"כ תקציב בדרישה (₪)', 'number')}${f('budgetExVat', 'תקציב בהזמנה ללא מע"מ (₪)', 'number')}
       ${f('vat', 'מע"מ (₪)', 'number')}${f('budgetTotal', 'סה"כ כולל מע"מ (₪)', 'number')}
       ${f('utilized', 'נוצל עד כה (₪, ללא מע"מ)', 'number')}${f('method', 'שיטת התקשרות')}
@@ -1207,7 +1245,7 @@ window.DEMO_SEED = function () {
   }
 
   function historyHTML(h = []) {
-    const L = { create: 'נוצרה', increase: 'הגדלה', decrease: 'הפחתה', extend: 'הארכת תוקף', version: 'גרסה חדשה', link: 'קישור להמשך', note: 'הערה' };
+    const L = { create: 'נוצרה', increase: 'הגדלה', decrease: 'הפחתה', extend: 'הארכת תוקף', version: 'גרסה חדשה', link: 'קישור להמשך', note: 'הערה', invoice: 'חשבון' };
     return h.length ? `<div class="timeline">${h.slice().reverse().map((x) => `<div class="tl-item ${x.type}"><div><b>${L[x.type] || x.type}</b>
       ${x.amount ? ` · ${x.type === 'decrease' ? '−' : '+'}${money(x.amount)}` : ''}${x.newEnd ? ` · עד ${dfmt(x.newEnd)}` : ''}${x.version != null ? ` · גרסה ${esc(x.version)}` : ''}</div>
       ${x.note ? `<div>${esc(x.note)}</div>` : ''}<div class="d">${dfmt(x.date)}${x.by ? ' · ' + esc(x.by) : ''}</div></div>`).join('')}</div>` : '<div class="empty" style="padding:12px">אין שינויים</div>';
@@ -1232,6 +1270,8 @@ window.DEMO_SEED = function () {
         ${info('מספר דרישה', esc(o.demandNumber || '—'))}${info('ספק', esc(o.supplier || '—'))}${info('יחידה / קבוצת רכש', esc([o.unit, o.buyer].filter(Boolean).join(' · ') || '—'))}
         ${info('תקציב בדרישה', money(o.demandBudget))}${info('תקציב בהזמנה (ללא מע"מ)', money(o.budgetExVat))}${info('כולל מע"מ', money(o.budgetTotal))}
         ${info('תחילת תוקף', dfmt(o.startDate))}${info('סוף תוקף', dfmt(o.endDate))}${info('יתרה לניצול', money((o.budgetExVat || 0) - (o.utilized || 0)))}
+        ${o.profession ? info('מקצוע', esc(o.profession)) : ''}${o.owner ? info('אחראי/ת', esc(o.owner)) : ''}${o.planWork ? info('עבודת תכנון', esc(o.planWork)) : ''}
+        ${o.projectId && byId('projects', o.projectId) ? info('פרויקט', `<a href="#" data-act="open" data-kind="ent-project" data-id="${o.projectId}">${esc(byId('projects', o.projectId).name)}</a>`) : ''}
       </div>
       <div class="section-t">💰 ניצול תקציב <span style="margin-inline-start:auto;font-weight:500">${p}% · ${money(o.utilized)}</span></div>${bar(p)}
       ${o.consultants && o.consultants.length ? `<div class="section-t">👷 יועצים / נותני שירות</div><table class="tbl"><thead><tr><th>שם</th><th>שעות</th><th>תעריף</th><th>סה"כ</th></tr></thead><tbody>
@@ -1594,7 +1634,7 @@ window.DEMO_SEED = function () {
     return l.filter((x) => LINK_T[x.type] && entRec(x.type, x.id));
   }
   const hasLink = (t, type, id) => linksOf(t).some((x) => x.type === type && x.id === id);
-  const consultantMatch = (o, p) => !!(o && p && p.name && (o.consultants || []).some((c) => norm(c.name) === norm(p.name)));
+  const consultantMatch = (o, p) => !!(o && p && p.name && ((o.consultants || []).some((c) => norm(c.name) === norm(p.name)) || norm(o.supplier) === norm(p.name) || (o.owner && norm(o.owner) === norm(p.name))));
   function linkChip(x, tid) {
     const T = LINK_T[x.type] || { i: '#' };
     return `<span class="lchip lc-${x.type}" data-act="open" data-kind="ent-${x.type}" data-id="${esc(x.id)}">${T.i} ${esc(entName(x.type, x.id))}${tid ? `<b data-act="unlink" data-id="${tid}" data-type="${x.type}" data-lid="${esc(x.id)}" title="הסר קישור">×</b>` : ''}</span>`;
@@ -1745,7 +1785,7 @@ window.DEMO_SEED = function () {
     // יומן משולב
     const feed = [];
     r.tasks.forEach((t) => (t.comments || []).filter((c) => c.type !== 'system').forEach((c) => feed.push({ at: c.at, by: c.by, text: c.text, type: c.type, src: `${keyOf(t)} ${t.title}` + (c.subId ? (() => { const si = (t.subtasks || []).findIndex((y) => y.id === c.subId); return si >= 0 ? ` ↳ ${t.subtasks[si].title}` : ''; })() : ''), kind: 'task', id: t.id })));
-    ordersAll.forEach((o) => (o.history || []).forEach((h) => feed.push({ at: h.date, by: h.by || '', text: ({ create: 'נוצרה', increase: 'הגדלה ' + money(h.amount), decrease: 'הפחתה ' + money(h.amount), extend: 'הארכה עד ' + dfmt(h.newEnd), version: 'גרסה ' + (h.version || ''), link: 'קישור להמשך', note: '' })[h.type] + (h.note ? ' — ' + h.note : ''), type: 'order', src: 'הזמנה ' + o.orderNumber, kind: 'order', id: o.id })));
+    ordersAll.forEach((o) => (o.history || []).forEach((h) => feed.push({ at: h.date, by: h.by || '', text: ({ create: 'נוצרה', increase: 'הגדלה ' + money(h.amount), decrease: 'הפחתה ' + money(h.amount), extend: 'הארכה עד ' + dfmt(h.newEnd), version: 'גרסה ' + (h.version || ''), link: 'קישור להמשך', note: '', invoice: 'חשבון' })[h.type] + (h.note ? ' — ' + h.note : ''), type: 'order', src: 'הזמנה ' + o.orderNumber, kind: 'order', id: o.id })));
     feed.sort((a, b) => String(b.at || '').localeCompare(String(a.at || '')));
     const sec = (title, n, html, act = '') => `<div class="ent-sec"><div class="ent-sec-h"><h4>${title}</h4><span class="pill gray">${n}</span><span style="flex:1"></span>${act}</div>${html}</div>`;
     const presetLinks = type === 'tag' ? [] : [{ type, id }];
@@ -1811,7 +1851,7 @@ window.DEMO_SEED = function () {
 
   /* ---------------- דוחות ---------------- */
   const REPORT_COLS = {
-    orders: [['orderNumber', 'מספר הזמנה'], ['version', 'גרסה'], ['demandNumber', 'מספר דרישה'], ['supplier', 'ספק'], ['description', 'תיאור'], ['demandBudget', 'תקציב בדרישה'],
+    orders: [['orderNumber', 'מספר הזמנה'], ['version', 'גרסה'], ['demandNumber', 'מספר דרישה'], ['supplier', 'ספק'], ['description', 'תיאור'], ['profession', 'מקצוע'], ['owner', 'אחראי/ת'], ['projectName', 'פרויקט'], ['demandBudget', 'תקציב בדרישה'],
       ['budgetExVat', 'תקציב בהזמנה'], ['budgetTotal', 'כולל מע"מ'], ['utilized', 'נוצל'], ['utilPct', '% ניצול'], ['startDate', 'תחילה'], ['endDate', 'סיום'], ['daysLeft', 'ימים לסיום'], ['status', 'סטטוס']],
     agreements: [['agreementNumber', 'מספר הסכם'], ['demandNumber', 'מספר דרישה'], ['name', 'שם ההסכם'], ['contractor', 'קבלן'], ['kind', 'סוג'], ['targetValue', 'ערך יעד'],
       ['utilized', 'נוצל'], ['utilPct', '% ניצול'], ['startDate', 'תחילה'], ['endDate', 'סיום'], ['daysLeft', 'ימים לסיום'], ['status', 'סטטוס']],
@@ -1836,7 +1876,7 @@ window.DEMO_SEED = function () {
     if (R.sections.includes('orders')) out.orders = S.orders.filter((o) => inRel('orders', o) && match(o, R.text) && inRange(o.endDate)).filter((o) => { const k = orderStatus(o).k;
       return R.status === 'all' || (R.status === 'active' && ['active', 'soon', 'ending'].includes(k)) || (R.status === 'ending' && ['soon', 'ending'].includes(k)) || (R.status === 'closed' && ['ended', 'linked', 'cancelled'].includes(k)); })
       .sort((a, b) => (a.endDate || '').localeCompare(b.endDate || ''))
-      .map((o) => ({ ...o, utilPct: pct(o.utilized || 0, o.budgetExVat), daysLeft: daysLeft(o.endDate), status: orderStatus(o).l }));
+      .map((o) => ({ ...o, projectName: (byId('projects', o.projectId) || {}).name || '', utilPct: pct(o.utilized || 0, o.budgetExVat), daysLeft: daysLeft(o.endDate), status: orderStatus(o).l }));
     if (R.sections.includes('agreements')) out.agreements = S.agreements.filter((a) => inRel('agreements', a) && match(a, R.text) && inRange(a.endDate)).filter((a) => { const k = agreeStatus(a).k;
       return R.status === 'all' || (R.status === 'active' && ['active', 'soon', 'ending'].includes(k)) || (R.status === 'ending' && ['soon', 'ending'].includes(k)) || (R.status === 'closed' && ['ended', 'cancelled'].includes(k)); })
       .sort((a, b) => (a.endDate || '').localeCompare(b.endDate || ''))
@@ -2080,7 +2120,19 @@ window.DEMO_SEED = function () {
       col.ondrop = (e) => { e.preventDefault(); col.classList.remove('drag-over'); const id = e.dataTransfer.getData('text/task'); if (id) setTaskStatus(id, col.dataset.drop); };
     });
     const restore = $('#restore');
-    if (restore) restore.onchange = async (e) => { const f = e.target.files[0]; if (!f) return; try { await DB.importAll(JSON.parse(await f.text())); toast('הנתונים שוחזרו', 'ok'); } catch (err) { toast('קובץ לא תקין', 'error'); } };
+    if (restore) restore.onchange = async (e) => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; try { await runImport(JSON.parse(await f.text())); } catch (err) { toast('קובץ לא תקין', 'error'); } };
+  }
+  const COL_HE = { orders: 'הזמנות', agreements: 'הסכמים', tasks: 'משימות', notes: 'פיתקיות', projects: 'פרויקטים', people: 'אנשי קשר', settings: 'הגדרות' };
+  async function runImport(data) {
+    const plan = DB.planImport(data, S);
+    const line = (o) => Object.entries(o).map(([c, n]) => `${n} ${COL_HE[c] || c}`).join(', ');
+    if (!plan.items.length) return toast('אין בקובץ שום דבר חדש — הכל כבר קיים באתר');
+    const msg = `${Object.keys(plan.add).length ? 'יתווספו: ' + line(plan.add) + '. ' : ''}${Object.keys(plan.update).length ? 'יעודכנו: ' + line(plan.update) + '. ' : ''}${Object.keys(plan.skip).length ? 'כבר קיימים באתר ולא ישתנו: ' + line(plan.skip) + '.' : ''}`;
+    if (!(await ask(msg + ' להמשיך?'))) return;
+    toast('מייבא…');
+    const n = await DB.importPlan(plan, (d, t) => toast(`נשמרו ${d} מתוך ${t}`));
+    DB.log('ייבא/ה נתונים מקובץ', 'backup', `${n} רשומות`);
+    toast(`הייבוא הסתיים — ${n} רשומות`, 'ok');
   }
   async function setTaskStatus(id, status) {
     const t = byId('tasks', id); if (!t || t.status === status) return;
