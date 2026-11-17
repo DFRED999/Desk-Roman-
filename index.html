@@ -1045,7 +1045,7 @@ window.DEMO_SEED = function () {
     const st = settings();
     const dl = daysLeft(a.endDate);
     if (a.cancelled) return { k: 'cancelled', l: 'בוטל', c: 'gray' };
-    if (dl != null && dl < 0) return { k: 'ended', l: 'הסתיים', c: 'gray' };
+    if (a.inactive || (dl != null && dl < 0)) return { k: 'ended', l: 'הסתיים', c: 'gray' };
     if (dl != null && dl <= st.alertDays) return { k: 'ending', l: 'מסתיים בקרוב', c: 'bad' };
     if (dl != null && dl <= st.warnDays) return { k: 'soon', l: `${dl} ימים לסיום`, c: 'warn' };
     return { k: 'active', l: 'בתוקף', c: 'ok' };
@@ -1430,13 +1430,14 @@ window.DEMO_SEED = function () {
   /* ---------------- הסכמים ---------------- */
   const AGREE_COLS = [
     { k: 'agreementNumber', l: 'מס׳ הסכם', cls: 'strong', v: (a) => esc(a.agreementNumber || '—') },
-    { k: 'demandNumber', l: 'מס׳ דרישה', v: (a) => esc(a.demandNumber || '—') },
     { k: 'name', l: 'שם ההסכם', v: (a) => esc(a.name || '—') },
     { k: 'contractor', l: 'קבלן', v: (a) => esc(a.contractor || '—') },
     { k: 'targetValue', l: 'ערך יעד', cls: 'num', v: (a) => money(a.targetValue) },
     { k: 'utilized', l: 'ניצול', sv: (a) => pct(a.utilized || 0, a.targetValue), v: (a) => { const p = pct(a.utilized || 0, a.targetValue); return `${bar(p)}<div class="sub">${p}% · ${money(a.utilized)}</div>`; } },
+    { k: 'executed', l: 'בוצע', sv: (a) => pct(a.executed || 0, a.utilized), v: (a) => (a.executed != null ? `${money(a.executed)}<div class="sub">${pct(a.executed, a.utilized)}% מההזמנות</div>` : '—') },
+    { k: 'nOrders', l: 'הזמנות', cls: 'num', sv: (a) => (a.contractOrders || []).length, v: (a) => (a.contractOrders || []).length || '—' },
     { k: 'startDate', l: 'תחילה', cls: 'num', v: (a) => dfmt(a.startDate) },
-    { k: 'endDate', l: 'סיום', cls: 'num', v: (a) => dfmt(a.endDate) },
+    { k: 'endDate', l: 'סיום', cls: 'num', v: (a) => `${dfmt(a.endDate)}${a.period ? `<div class="sub">${esc(a.period)}</div>` : ''}` },
     { k: 'status', l: 'סטטוס', sv: (a) => agreeStatus(a).l, v: (a) => { const s = agreeStatus(a); return `<span class="pill ${s.c}">${s.l}</span>`; } },
   ];
   function viewAgreements() {
@@ -1481,9 +1482,20 @@ window.DEMO_SEED = function () {
     modal(`${esc(a.name || 'הסכם')} · ${esc(a.agreementNumber || '')}`, `
       <div style="margin-bottom:14px"><span class="pill ${s.c}">${s.l}</span> <span class="pill gray">${esc(a.kind || 'הסכם')}</span></div>
       <div class="info-grid">${info('מספר הסכם', esc(a.agreementNumber || '—'))}${info('מספר דרישה', esc(a.demandNumber || '—'))}${info('קבלן', esc(a.contractor || '—'))}
-        ${info('ערך יעד', money(a.targetValue))}${info('נוצל', money(a.utilized))}${info('יתרה', money((a.targetValue || 0) - (a.utilized || 0)))}
-        ${info('תחילת תוקף', dfmt(a.startDate))}${info('סוף תוקף', dfmt(a.endDate))}${info('ימים לסיום', daysLeft(a.endDate) ?? '—')}</div>
+        ${info('ערך יעד (ללא מע"מ)', money(a.targetValue))}${info('הוזמן (ניצול)', money(a.utilized))}${info('יתרה לניצול', money((a.targetValue || 0) - (a.utilized || 0)))}
+        ${info('תחילת תוקף', dfmt(a.startDate))}${info('סוף תוקף', dfmt(a.endDate))}${info('ימים לסיום', daysLeft(a.endDate) ?? '—')}
+        ${a.period ? info('תקופה', esc(a.period)) : ''}${a.supplierNumber ? info('מספר ספק', esc(a.supplierNumber)) : ''}${a.executed != null ? info('בוצע בפועל (ללא מע"מ)', money(a.executed)) : ''}</div>
       <div class="section-t">📊 ניצול מערך היעד <span style="margin-inline-start:auto;font-weight:500">${p}%</span></div>${bar(p)}
+      ${a.executed != null && a.utilized ? `<div class="sub" style="margin-top:6px">מתוך ההזמנות בוצע ${pct(a.executed, a.utilized)}% (${money(a.executed)})</div>` : ''}
+      ${(a.contractOrders || []).length ? (() => { const regions = [...new Set(a.contractOrders.map((o) => o.region).filter(Boolean))];
+        const rows = a.contractOrders.filter((o) => !S._agRegion || o.region === S._agRegion);
+        return `<div class="section-t">📄 הזמנות תחת ההסכם <span class="pill gray">${a.contractOrders.length}</span></div>
+        ${regions.length > 1 ? `<div class="chips" style="margin-bottom:8px"><span class="chip ${!S._agRegion ? 'on' : ''}" data-act="ag-region" data-v="">הכל</span>${regions.map((r) => `<span class="chip ${S._agRegion === r ? 'on' : ''}" data-act="ag-region" data-v="${esc(r)}">${esc(r)}</span>`).join('')}</div>` : ''}
+        <div class="table-wrap"><table class="tbl"><thead><tr><th>הזמנה</th><th>תיאור</th><th>אזור</th><th>ערך (ללא מע"מ)</th><th>בוצע</th><th>ביצוע</th><th>יתרה</th></tr></thead><tbody>
+        ${rows.map((o) => { const op = pct(o.executed || 0, o.value); return `<tr style="cursor:default"><td class="num strong">${esc(o.orderNumber)}</td><td>${esc(o.description || '—')}</td><td>${esc(o.region || '')}</td>
+          <td class="num">${money(o.value)}</td><td class="num">${money(o.executed)}</td><td>${o.value ? `${bar(op)}<div class="sub">${op}%</div>` : '—'}</td><td class="num">${money(o.balance)}</td></tr>`; }).join('')}
+        <tr class="g-row"><td colspan="3">סה"כ${S._agRegion ? ' · ' + esc(S._agRegion) : ''}</td><td class="num">${money(rows.reduce((x, o) => x + (o.value || 0), 0))}</td><td class="num">${money(rows.reduce((x, o) => x + (o.executed || 0), 0))}</td><td></td><td class="num">${money(rows.reduce((x, o) => x + (o.balance || 0), 0))}</td></tr>
+        </tbody></table></div>`; })() : ''}
       <div class="section-t">🕓 היסטוריית שינויים</div>${historyHTML(a.history)}
       <div class="section-t">✅ משימות קשורות <button class="btn sm orange" data-act="task-for" data-kind="agreement" data-id="${id}" style="margin-inline-start:auto">+ משימה</button></div>
       ${tasks.length ? tasks.map(taskCard).join('') : '<div class="empty" style="padding:12px">אין משימות</div>'}
@@ -2941,6 +2953,7 @@ window.DEMO_SEED = function () {
         DB.log(ty === 'project' ? 'הוסיף/ה פרויקט' : 'הוסיף/ה איש קשר', ty, v); await addLink(id, ty, nid); break; }
       case 'more-nav': modal('תפריט', `<div class="more-nav">${NAV.map((x) => `<a href="#${x.id}" data-act="close-go">${ICONS[x.id === 'config' ? 'settings' : x.id]}<span>${x.label}</span></a>`).join('')}</div>`); break;
       case 'close-go': closeModal(); location.hash = el.getAttribute('href'); break;
+      case 'ag-region': S._agRegion = el.dataset.v; openAgreement(S._openDetail[1]); break;
       case 'close-order': openCloseOrder(id); break;
       case 'do-close': doClose(el.dataset.ids.split(',')); break;
       case 'reopen-order': { const o = byId('orders', id); await DB.update('orders', id, { closed: false, history: [...(o.history || []), { type: 'reopen', date: today(), by: DB.user.name }] }); toast('ההזמנה נפתחה מחדש', 'ok'); break; }
